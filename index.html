@@ -1066,6 +1066,95 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { copyShareSummaryBtn.textContent = 'Copy to Clipboard'; }, 1200);
     });
 
+    // --- Task Sub-Category Dynamic Loading ---
+    const taskMainCategorySelect = document.getElementById('task-main-category-select');
+    const taskSubCategorySelect = document.getElementById('task-sub-category-select');
+
+    // Populate sub-categories when main category changes (Task Module)
+    taskMainCategorySelect.addEventListener('change', (e) => {
+        const mainCategory = e.target.value;
+        taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        if (!mainCategory || !window.taskCategories || !taskCategories[mainCategory]) {
+            taskSubCategorySelect.disabled = true;
+            return;
+        }
+        taskSubCategorySelect.disabled = false;
+        taskCategories[mainCategory].forEach(sub => {
+            const option = document.createElement('option');
+            option.value = sub.name;
+            option.textContent = `${sub.emoji} ${sub.name}`;
+            taskSubCategorySelect.appendChild(option);
+        });
+    });
+
+    // --- Budget Sub-Category Dynamic Loading ---
+    const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
+    const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
+    // Helper to get all categories including custom ones
+    function getAllBudgetCategories() {
+        const predefinedCategories = {
+            "Income": [
+                { "name": "Salary", "emoji": "💼" },
+                { "name": "Business", "emoji": "🏢" },
+                { "name": "Investments", "emoji": "📈" }
+            ],
+            "Expense": [
+                { "name": "Rent", "emoji": "🏠" },
+                { "name": "Utilities", "emoji": "💡" },
+                { "name": "Groceries", "emoji": "🥦" },
+                { "name": "Transportation", "emoji": "🚗" },
+                { "name": "Entertainment", "emoji": "🎉" },
+                { "name": "Healthcare", "emoji": "⚕️" },
+                { "name": "Insurance", "emoji": "🛡️" },
+                { "name": "Education", "emoji": "🎓" },
+                { "name": "Clothing", "emoji": "👗" },
+                { "name": "Personal Care", "emoji": "🧴" },
+                { "name": "Miscellaneous", "emoji": "📦" }
+            ],
+            "Savings": [
+                { "name": "Emergency Fund", "emoji": "🚑" },
+                { "name": "Retirement", "emoji": "🏖️" },
+                { "name": "Vacation", "emoji": "✈️" },
+                { "name": "Major Purchase", "emoji": "🏠" }
+            ],
+            "Invest": [
+                { "name": "Stocks", "emoji": "📈" },
+                { "name": "Bonds", "emoji": "📉" },
+                { "name": "Real Estate", "emoji": "🏢" },
+                { "name": "Cryptocurrency", "emoji": "₿" }
+            ]
+        };
+        const customCategories = appData.customBudgetCategories;
+        const allCategories = { ...predefinedCategories };
+        Object.keys(customCategories).forEach(mainCat => {
+            if (!allCategories[mainCat]) allCategories[mainCat] = [];
+            customCategories[mainCat].forEach(subCat => {
+                allCategories[mainCat].push({ name: subCat, emoji: '' });
+            });
+        });
+        return allCategories;
+    }
+
+    // Populate sub-categories when main category changes (Budget Module)
+    transactionMainCategorySelect.addEventListener('change', (e) => {
+        const mainCategory = e.target.value;
+        transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        if (!mainCategory) {
+            transactionSubCategorySelect.disabled = true;
+            return;
+        }
+        transactionSubCategorySelect.disabled = false;
+        const allBudgetCategories = getAllBudgetCategories();
+        if (allBudgetCategories[mainCategory]) {
+            allBudgetCategories[mainCategory].forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub.name;
+                option.textContent = `${sub.emoji} ${sub.name}`;
+                transactionSubCategorySelect.appendChild(option);
+            });
+        }
+    });
+
     // --- Performance & UX Enhancements ---
 
     // Loading overlay helpers
