@@ -704,153 +704,198 @@
     </div>
 
     <script>
-        // --- Theme Customization ---
-        const themeSwitcher = document.getElementById('theme-switcher');
-        const themeClassMap = {
-            light: 'theme-light',
-            dark: 'theme-dark',
-            solarized: 'theme-solarized'
-        };
-        // Load theme from localStorage
-        function applyTheme(theme) {
-            document.body.classList.remove('theme-light', 'theme-dark', 'theme-solarized');
-            document.body.classList.add(themeClassMap[theme] || 'theme-light');
-            themeSwitcher.value = theme;
-        }
-        function saveTheme(theme) {
-            localStorage.setItem('personalAssistantTheme', theme);
-        }
-        function loadTheme() {
-            const savedTheme = localStorage.getItem('personalAssistantTheme') || 'light';
-            applyTheme(savedTheme);
-        }
-        themeSwitcher.addEventListener('change', (e) => {
-            const theme = e.target.value;
-            applyTheme(theme);
-            saveTheme(theme);
-        });
-        loadTheme();
-
-        // --- Export/Import/Share Summary ---
-        const exportDataBtn = document.getElementById('export-data-btn');
-        const importDataInput = document.getElementById('import-data-input');
-        const shareSummaryBtn = document.getElementById('share-summary-btn');
-        const shareSummaryModal = document.getElementById('share-summary-modal');
-        const shareSummaryTextarea = document.getElementById('share-summary-textarea');
-        const closeShareSummaryModal = document.getElementById('close-share-summary-modal');
-        const copyShareSummaryBtn = document.getElementById('copy-share-summary-btn');
-
-        // Helper: Gather all app data
-        function getAllAppData() {
-            return {
-                tasks: JSON.parse(localStorage.getItem('personalAssistantTasks') || '[]'),
-                transactions: JSON.parse(localStorage.getItem('personalAssistantTransactions') || '[]'),
-                notes: JSON.parse(localStorage.getItem('personalAssistantNotes') || '[]'),
-                goals: JSON.parse(localStorage.getItem('personalAssistantGoals') || '[]'),
-                budgetGoals: JSON.parse(localStorage.getItem('personalAssistantBudgetGoals') || '{}'),
-                customBudgetCategories: JSON.parse(localStorage.getItem('personalAssistantCustomBudgetCategories') || '{"Income":[],"Expense":[],"Savings":[],"Invest":[]}')
-            };
-        }
-        // Helper: Validate imported data
-        function validateAppData(data) {
-            if (!data) return false;
-            if (!Array.isArray(data.tasks) || !Array.isArray(data.transactions) || !Array.isArray(data.notes) || !Array.isArray(data.goals)) return false;
-            if (typeof data.budgetGoals !== 'object' || typeof data.customBudgetCategories !== 'object') return false;
-            return true;
-        }
-        // Export
-        exportDataBtn.addEventListener('click', () => {
-            const data = getAllAppData();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'personal-assistant-data.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-        // Import
-        importDataInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    if (!validateAppData(data)) {
-                        alert('Invalid data format. Import failed.');
-                        return;
-                    }
-                    localStorage.setItem('personalAssistantTasks', JSON.stringify(data.tasks));
-                    localStorage.setItem('personalAssistantTransactions', JSON.stringify(data.transactions));
-                    localStorage.setItem('personalAssistantNotes', JSON.stringify(data.notes));
-                    localStorage.setItem('personalAssistantGoals', JSON.stringify(data.goals));
-                    localStorage.setItem('personalAssistantBudgetGoals', JSON.stringify(data.budgetGoals));
-                    localStorage.setItem('personalAssistantCustomBudgetCategories', JSON.stringify(data.customBudgetCategories));
-                    alert('Data imported successfully! The page will now reload.');
-                    location.reload();
-                } catch (err) {
-                    alert('Failed to import data: ' + err.message);
-                }
-            };
-            reader.readAsText(file);
-        });
-        // Share Summary
-        shareSummaryBtn.addEventListener('click', () => {
-            const data = getAllAppData();
-            let summary = '';
-            // Tasks
-            summary += `=== Tasks (${data.tasks.length}) ===\n`;
-            data.tasks.forEach(t => {
-                summary += `- [${t.completed ? 'x' : ' '}] ${t.fullDescription || t.description} (Due: ${t.date}, Priority: ${t.priority})\n`;
-            });
-            // Notes
-            summary += `\n=== Notes (${data.notes.length}) ===\n`;
-            data.notes.forEach(n => {
-                summary += `- ${n.title} (${n.category || 'General'})\n`;
-            });
-            // Budget
-            summary += `\n=== Transactions (${data.transactions.length}) ===\n`;
-            data.transactions.forEach(tr => {
-                summary += `- ${tr.mainCategory}/${tr.subCategory}: $${tr.amount} (${tr.description}, ${tr.date})\n`;
-            });
-            // Goals
-            summary += `\n=== Goals (${data.goals.length}) ===\n`;
-            data.goals.forEach(g => {
-                summary += `- ${g.specific} [${g.category}] Progress: ${g.currentProgress}/${g.measurableTarget} (${g.measurableMetric}) Deadline: ${g.targetDate}\n`;
-            });
-            // Budget Goals
-            summary += `\n=== Budget Goals ===\n`;
-            Object.keys(data.budgetGoals).forEach(month => {
-                summary += `- ${month}:\n`;
-                Object.keys(data.budgetGoals[month]).forEach(subcat => {
-                    summary += `   • ${subcat}: $${data.budgetGoals[month][subcat]}\n`;
-                });
-            });
-            shareSummaryTextarea.value = summary;
-            shareSummaryModal.classList.remove('hidden');
-        });
-        closeShareSummaryModal.addEventListener('click', () => {
-            shareSummaryModal.classList.add('hidden');
-        });
-        copyShareSummaryBtn.addEventListener('click', () => {
-            shareSummaryTextarea.select();
-            document.execCommand('copy');
-            copyShareSummaryBtn.textContent = 'Copied!';
-            setTimeout(() => { copyShareSummaryBtn.textContent = 'Copy to Clipboard'; }, 1200);
-        });
-
-        // --- existing script code (all your app logic) ---
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Elements ---
+            // --- Theme Customization ---
+            const themeSwitcher = document.getElementById('theme-switcher');
+            const themeClassMap = {
+                light: 'theme-light',
+                dark: 'theme-dark',
+                solarized: 'theme-solarized'
+            };
+            function applyTheme(theme) {
+                document.body.classList.remove('theme-light', 'theme-dark', 'theme-solarized');
+                document.body.classList.add(themeClassMap[theme] || 'theme-light');
+                themeSwitcher.value = theme;
+            }
+            function saveTheme(theme) {
+                localStorage.setItem('personalAssistantTheme', theme);
+            }
+            function loadTheme() {
+                const savedTheme = localStorage.getItem('personalAssistantTheme') || 'light';
+                applyTheme(savedTheme);
+            }
+            themeSwitcher.addEventListener('change', (e) => {
+                const theme = e.target.value;
+                applyTheme(theme);
+                saveTheme(theme);
+            });
+            loadTheme();
+
+            // --- Export/Import/Share Summary ---
+            const exportDataBtn = document.getElementById('export-data-btn');
+            const importDataInput = document.getElementById('import-data-input');
+            const shareSummaryBtn = document.getElementById('share-summary-btn');
+            const shareSummaryModal = document.getElementById('share-summary-modal');
+            const shareSummaryTextarea = document.getElementById('share-summary-textarea');
+            const closeShareSummaryModal = document.getElementById('close-share-summary-modal');
+            const copyShareSummaryBtn = document.getElementById('copy-share-summary-btn');
+
+            // Helper: Gather all app data
+            function getAllAppData() {
+                return {
+                    tasks: JSON.parse(localStorage.getItem('personalAssistantTasks') || '[]'),
+                    transactions: JSON.parse(localStorage.getItem('personalAssistantTransactions') || '[]'),
+                    notes: JSON.parse(localStorage.getItem('personalAssistantNotes') || '[]'),
+                    goals: JSON.parse(localStorage.getItem('personalAssistantGoals') || '[]'),
+                    budgetGoals: JSON.parse(localStorage.getItem('personalAssistantBudgetGoals') || '{}'),
+                    customBudgetCategories: JSON.parse(localStorage.getItem('personalAssistantCustomBudgetCategories') || '{"Income":[],"Expense":[],"Savings":[],"Invest":[]}')
+                };
+            }
+            // Helper: Validate imported data
+            function validateAppData(data) {
+                if (!data) return false;
+                if (!Array.isArray(data.tasks) || !Array.isArray(data.transactions) || !Array.isArray(data.notes) || !Array.isArray(data.goals)) return false;
+                if (typeof data.budgetGoals !== 'object' || typeof data.customBudgetCategories !== 'object') return false;
+                return true;
+            }
+            // Export
+            exportDataBtn.addEventListener('click', () => {
+                const data = getAllAppData();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'personal-assistant-data.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            // Import
+            importDataInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (!validateAppData(data)) {
+                            alert('Invalid data format. Import failed.');
+                            return;
+                        }
+                        localStorage.setItem('personalAssistantTasks', JSON.stringify(data.tasks));
+                        localStorage.setItem('personalAssistantTransactions', JSON.stringify(data.transactions));
+                        localStorage.setItem('personalAssistantNotes', JSON.stringify(data.notes));
+                        localStorage.setItem('personalAssistantGoals', JSON.stringify(data.goals));
+                        localStorage.setItem('personalAssistantBudgetGoals', JSON.stringify(data.budgetGoals));
+                        localStorage.setItem('personalAssistantCustomBudgetCategories', JSON.stringify(data.customBudgetCategories));
+                        alert('Data imported successfully! The page will now reload.');
+                        location.reload();
+                    } catch (err) {
+                        alert('Failed to import data: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            });
+            // Share Summary
+            shareSummaryBtn.addEventListener('click', () => {
+                const data = getAllAppData();
+                let summary = '';
+                // Tasks
+                summary += `=== Tasks (${data.tasks.length}) ===\n`;
+                data.tasks.forEach(t => {
+                    summary += `- [${t.completed ? 'x' : ' '}] ${t.fullDescription || t.description} (Due: ${t.date}, Priority: ${t.priority})\n`;
+                });
+                // Notes
+                summary += `\n=== Notes (${data.notes.length}) ===\n`;
+                data.notes.forEach(n => {
+                    summary += `- ${n.title} (${n.category || 'General'})\n`;
+                });
+                // Budget
+                summary += `\n=== Transactions (${data.transactions.length}) ===\n`;
+                data.transactions.forEach(tr => {
+                    summary += `- ${tr.mainCategory}/${tr.subCategory}: $${tr.amount} (${tr.description}, ${tr.date})\n`;
+                });
+                // Goals
+                summary += `\n=== Goals (${data.goals.length}) ===\n`;
+                data.goals.forEach(g => {
+                    summary += `- ${g.specific} [${g.category}] Progress: ${g.currentProgress}/${g.measurableTarget} (${g.measurableMetric}) Deadline: ${g.targetDate}\n`;
+                });
+                // Budget Goals
+                summary += `\n=== Budget Goals ===\n`;
+                Object.keys(data.budgetGoals).forEach(month => {
+                    summary += `- ${month}:\n`;
+                    Object.keys(data.budgetGoals[month]).forEach(subcat => {
+                        summary += `   • ${subcat}: $${data.budgetGoals[month][subcat]}\n`;
+                    });
+                });
+                shareSummaryTextarea.value = summary;
+                shareSummaryModal.classList.remove('hidden');
+            });
+            closeShareSummaryModal.addEventListener('click', () => {
+                shareSummaryModal.classList.add('hidden');
+            });
+            copyShareSummaryBtn.addEventListener('click', () => {
+                shareSummaryTextarea.select();
+                document.execCommand('copy');
+                copyShareSummaryBtn.textContent = 'Copied!';
+                setTimeout(() => { copyShareSummaryBtn.textContent = 'Copy to Clipboard'; }, 1200);
+            });
+
+            // --- View Switching Logic ---
+            function showView(viewToShow) {
+                const allViews = document.querySelectorAll('.module-view');
+                allViews.forEach(view => view.classList.add('hidden'));
+                viewToShow.classList.remove('hidden');
+                // Update nav link styling
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('text-blue-200', 'font-bold', 'underline');
+                    link.classList.add('text-white', 'font-medium');
+                });
+                const activeNavLinkId = `nav-${viewToShow.id.replace('-view', '')}`;
+                const activeNavLink = document.getElementById(activeNavLinkId);
+                if (activeNavLink) {
+                    activeNavLink.classList.remove('text-white', 'font-medium');
+                    activeNavLink.classList.add('text-blue-200', 'font-bold', 'underline');
+                }
+            }
+
+            // --- Navigation Event Listeners ---
             const dashboardView = document.getElementById('dashboard-view');
             const tasksView = document.getElementById('tasks-view');
             const budgetView = document.getElementById('budget-view');
             const notesView = document.getElementById('notes-view');
             const goalsView = document.getElementById('goals-view');
 
+            document.getElementById('nav-dashboard').addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(dashboardView);
+            });
+            document.getElementById('nav-tasks').addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(tasksView);
+                // Optionally: renderTasks();
+            });
+            document.getElementById('nav-budget').addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(budgetView);
+                // Optionally: renderTransactions();
+            });
+            document.getElementById('nav-notes').addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(notesView);
+                // Optionally: renderNotes();
+            });
+            document.getElementById('nav-goals').addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(goalsView);
+                // Optionally: renderGoals();
+            });
+
+            // Show dashboard by default
+            showView(dashboardView);
+
+            // --- DOM Elements ---
             const navDashboard = document.getElementById('nav-dashboard');
             const navTasks = document.getElementById('nav-tasks');
             const navBudget = document.getElementById('nav-budget');
@@ -1075,7 +1120,7 @@
              * Generates a unique ID for new items.
              * @returns {number} A unique timestamp-based ID.
              */
-            const generateId = () => Date.now() + Math.floor(Math.random() * 1000);
+            const generateId = () => Date.now() + Math.floor(Math.random() * 1000;
 
 
             /**
@@ -1385,4 +1430,273 @@
                 }
 
                 // Create new goal object
-                const
+                const newGoal = {
+                    id: generateId(),
+                    category,
+                    specific,
+                    measurableMetric,
+                    measurableTarget,
+                    currentProgress,
+                    achievable,
+                    whyMatters,
+                    targetDate,
+                    visionBoard: visionBoardFiles.length > 0 ? visionBoardFiles.map(file => file.name) : [],
+                    linkedNotes: linkedNotes.length > 0 ? linkedNotes : null,
+                    linkedTasks: linkedTasks.length > 0 ? linkedTasks : null,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+
+                // Add to goals array and save
+                goals.push(newGoal);
+                saveData('personalAssistantGoals', goals);
+
+                // Handle vision board image upload
+                if (visionBoardFiles.length > 0) {
+                    const formData = new FormData();
+                    visionBoardFiles.forEach(file => {
+                        formData.append('files', file);
+                    });
+                    // Upload images to server (mocked by a timeout here)
+                    setTimeout(() => {
+                        console.log('Uploaded vision board images:', visionBoardFiles);
+                    }, 1000);
+                }
+
+                // Clear form
+                goalCategorySelect.value = '';
+                goalSpecificInput.value = '';
+                goalMeasurableMetricInput.value = '';
+                goalMeasurableTargetInput.value = '';
+                goalCurrentProgressInput.value = '0';
+                goalAchievableInput.value = '';
+                goalWhyMattersInput.value = '';
+                goalTargetDateInput.value = '';
+                goalVisionBoardUpload.value = '';
+                visionBoardPreview.innerHTML = '';
+                goalLinkNotesSelect.value = '';
+                goalLinkTasksSelect.value = '';
+            };
+
+            /**
+             * Renders the list of tasks in the task management view.
+             */
+            const renderTasks = () => {
+                // Clear the current list
+                tasksList.innerHTML = '';
+
+                // Sort tasks by date (ascending) and then by priority
+                const sortedTasks = [...tasks].sort((a, b) => {
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    return dateA - dateB || a.priority.localeCompare(b.priority);
+                });
+
+                // Render each task
+                sortedTasks.forEach(task => {
+                    const taskItem = document.createElement('li');
+                    taskItem.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200';
+                    taskItem.innerHTML = `
+                        <div>
+                            <div class="text-gray-800 font-semibold">${task.fullDescription || task.description}</div>
+                            <div class="text-gray-500 text-sm">
+                                <span>Due: ${formatDate(task.date)}</span>
+                                <span class="mx-2">|</span>
+                                <span>Priority: ${task.priority}</span>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <button class="edit-task-btn bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 text-sm" title="Edit Task">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="delete-task-btn ml-2 bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm" title="Delete Task">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    // Edit task button click handler
+                    taskItem.querySelector('.edit-task-btn').addEventListener('click', () => {
+                        // Load task data into the form for editing
+                        taskMainCategorySelect.value = task.mainCategory;
+                        loadSubCategories(task.mainCategory);
+                        taskSubCategorySelect.value = task.subCategory;
+                        taskDescriptionInput.value = task.description;
+                        taskDateInput.value = task.date;
+                        taskPrioritySelect.value = task.priority;
+                        taskRecurringCheckbox.checked = task.recurring;
+                        recurringOptions.classList.toggle('hidden', !task.recurring);
+                        taskRecurrenceFrequency.value = task.recurrenceFrequency || 'daily';
+                        taskExcludeWeekendsCheckbox.checked = task.excludeWeekends || false;
+                        taskDependencySelect.value = task.dependency || '';
+
+                        // Show the task management view
+                        showView(tasksView);
+
+                        // Scroll to the top of the view
+                        tasksView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+
+                    // Delete task button click handler
+                    taskItem.querySelector('.delete-task-btn').addEventListener('click', () => {
+                        if (confirm('Are you sure you want to delete this task?')) {
+                            // Remove the task from the array and update storage
+                            tasks = tasks.filter(t => t.id !== task.id);
+                            saveData('personalAssistantTasks', tasks);
+                        }
+                    });
+
+                    tasksList.appendChild(taskItem);
+                });
+
+                // Update the task statistics display
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(t => t.completed).length;
+                const overdueTasks = tasks.filter(t => new Date(t.date) < new Date() && !t.completed).length;
+                dashboardTasksSummary.textContent = `Total: ${totalTasks}, Completed: ${completedTasks}, Overdue: ${overdueTasks}`;
+            };
+
+            /**
+             * Renders the list of transactions in the budget tracking view.
+             */
+            const renderTransactions = () => {
+                // Clear the current list
+                transactionsList.innerHTML = '';
+
+                // Sort transactions by date (descending)
+                const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                // Render each transaction
+                sortedTransactions.forEach(tr => {
+                    const transactionItem = document.createElement('li');
+                    transactionItem.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200';
+                    transactionItem.innerHTML = `
+                        <div>
+                            <div class="text-gray-800 font-semibold">${tr.description || 'No description'}</div>
+                            <div class="text-gray-500 text-sm">
+                                <span>${tr.mainCategory} / ${tr.subCategory || 'General'}</span>
+                                <span class="mx-2">|</span>
+                                <span>${formatDate(tr.date)}</span>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="text-gray-800 font-semibold">$${tr.amount}</div>
+                        </div>
+                    `;
+                    transactionsList.appendChild(transactionItem);
+                });
+
+                // Update the current balance display
+                const totalIncome = transactions.filter(tr => tr.mainCategory === 'Income').reduce((sum, tr) => sum + parseFloat(tr.amount), 0);
+                const totalExpense = transactions.filter(tr => tr.mainCategory === 'Expense').reduce((sum, tr) => sum + parseFloat(tr.amount), 0);
+                const currentBalance = totalIncome - totalExpense;
+                currentBalanceDisplay.textContent = `$${currentBalance.toFixed(2)}`;
+
+                // Update money left this month display
+                const currentMonth = getCurrentMonthYear();
+                const budgetData = budgetGoals[currentMonth] || {};
+                const totalBudgeted = Object.values(budgetData).reduce((sum, amount) => sum + amount, 0);
+                const moneyLeftThisMonth = totalBudgeted - totalExpense;
+                moneyLeftThisMonthDisplay.textContent = `$${moneyLeftThisMonth.toFixed(2)}`;
+            };
+
+            /**
+             * Renders the list of notes in the notes view.
+             */
+            const renderNotes = () => {
+                // Clear the current list
+                notesList.innerHTML = '';
+
+                // Render each note
+                notes.forEach(note => {
+                    const noteItem = document.createElement('li');
+                    noteItem.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200';
+                    noteItem.innerHTML = `
+                        <div>
+                            <div class="text-gray-800 font-semibold">${note.title || 'Untitled'}</div>
+                            <div class="text-gray-500 text-sm">
+                                <span>${note.category || 'No category'}</span>
+                                <span class="mx-2">|</span>
+                                <span>${formatDate(note.createdAt)}</span>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <button class="edit-note-btn bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 text-sm" title="Edit Note">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="delete-note-btn ml-2 bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm" title="Delete Note">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    // Edit note button click handler
+                    noteItem.querySelector('.edit-note-btn').addEventListener('click', () => {
+                        // Load note data into the form for editing
+                        loadNoteForEditing(note);
+
+                        // Show the notes view
+                        showView(notesView);
+
+                        // Scroll to the top of the view
+                        notesView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+
+                    // Delete note button click handler
+                    noteItem.querySelector('.delete-note-btn').addEventListener('click', () => {
+                        if (confirm('Are you sure you want to delete this note?')) {
+                            // Remove the note from the array and update storage
+                            notes = notes.filter(n => n.id !== note.id);
+                            saveData('personalAssistantNotes', notes);
+                        }
+                    });
+
+                    notesList.appendChild(noteItem);
+                });
+            };
+
+            /**
+             * Renders the list of goals in the goal setting view.
+             */
+            const renderGoals = () => {
+                // Clear the current list
+                goalsList.innerHTML = '';
+
+                // Sort goals by target date (ascending) and then by category
+                const sortedGoals = [...goals].sort((a, b) => {
+                    const dateA = new Date(a.targetDate);
+                    const dateB = new Date(b.targetDate);
+                    return dateA - dateB || a.category.localeCompare(b.category);
+                });
+
+                // Render each goal
+                sortedGoals.forEach(g => {
+                    const goalItem = document.createElement('li');
+                    goalItem.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200';
+                    goalItem.innerHTML = `
+                        <div>
+                            <div class="text-gray-800 font-semibold">${g.specific || 'No title'}</div>
+                            <div class="text-gray-500 text-sm">
+                                <span>${g.category || 'No category'}</span>
+                                <span class="mx-2">|</span>
+                                <span>Target: ${formatDate(g.targetDate)}</span>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="text-gray-800 font-semibold">Progress: ${g.currentProgress}/${g.measurableTarget}</div>
+                        </div>
+                    `;
+                    goalsList.appendChild(goalItem);
+                });
+            };
+
+            // Initial render
+            renderTasks();
+            renderTransactions();
+            renderNotes();
+            renderGoals();
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>
