@@ -1066,6 +1066,47 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { copyShareSummaryBtn.textContent = 'Copy to Clipboard'; }, 1200);
     });
 
+    // --- Task Categories Data ---
+    const taskCategories = {
+        "Work/Productivity": [
+            { name: "Plan", emoji: "📝" },
+            { name: "Organize", emoji: "🗄️" },
+            { name: "Research", emoji: "🔍" },
+            { name: "Write", emoji: "✍️" },
+            { name: "Create", emoji: "💡" },
+            { name: "Build", emoji: "🛠️" },
+            { name: "Fix", emoji: "🔧" },
+            { name: "Analyse", emoji: "📊" },
+            { name: "Prepare", emoji: "📋" },
+            { name: "Present", emoji: "🗣️" },
+            { name: "Remember", emoji: "🧠" },
+            { name: "Other", emoji: "➡️" }
+        ],
+        "Personal/Home": [
+            { name: "Clean", emoji: "🧹" },
+            { name: "Cook", emoji: "🍳" },
+            { name: "Buy", emoji: "🛍️" },
+            { name: "Shop", emoji: "🛒" },
+            { name: "Exercise", emoji: "🏃‍♀️" },
+            { name: "Read", emoji: "📖" },
+            { name: "Relax", emoji: "🧘" },
+            { name: "Study", emoji: "📚" },
+            { name: "Meet", emoji: "🤝" },
+            { name: "Call", emoji: "📞" },
+            { name: "Email", emoji: "📧" },
+            { name: "Text", emoji: "📱" }
+        ],
+        "Creative/Hobbies": [
+            { name: "Draw", emoji: "✏️" },
+            { name: "Paint", emoji: "🖌️" },
+            { name: "Write (creative)", emoji: "✍️" },
+            { name: "Play (music/games/sports)", emoji: "🎮" },
+            { name: "Garden", emoji: "🪴" },
+            { name: "Learn (new skill)", emoji: "🧠" },
+            { name: "Listen", emoji: "🎧" }
+        ]
+    };
+
     // --- Task Sub-Category Dynamic Loading ---
     const taskMainCategorySelect = document.getElementById('task-main-category-select');
     const taskSubCategorySelect = document.getElementById('task-sub-category-select');
@@ -1074,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     taskMainCategorySelect.addEventListener('change', (e) => {
         const mainCategory = e.target.value;
         taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
-        if (!mainCategory || !window.taskCategories || !taskCategories[mainCategory]) {
+        if (!mainCategory || !taskCategories[mainCategory]) {
             taskSubCategorySelect.disabled = true;
             return;
         }
@@ -1417,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Edit note button click handler
             noteItem.querySelector('.edit-note-btn').addEventListener('click', () => {
-                // Load note data into the form for editing
+                               // Load note data into the form for editing
                 loadNoteForEditing(note);
 
                 // Show the notes view
