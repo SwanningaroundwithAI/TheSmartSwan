@@ -1111,7 +1111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskMainCategorySelect = document.getElementById('task-main-category-select');
     const taskSubCategorySelect = document.getElementById('task-sub-category-select');
 
-    // Helper for loading sub-categories (used in add/edit and on change)
     function loadTaskSubCategories(mainCategory) {
         taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
         if (!mainCategory || !taskCategories[mainCategory]) {
@@ -1127,14 +1126,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Attach event for main category change
     taskMainCategorySelect.addEventListener('change', (e) => {
         loadTaskSubCategories(e.target.value);
     });
 
+    // --- Budget Sub-Category Dynamic Loading ---
+    const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
+    const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
+    function getAllBudgetCategories() {
+        const allBudgetCategories = {};
+        Object.keys(appData.budgetGoals).forEach(month => {
+            Object.keys(appData.budgetGoals[month]).forEach(subcat => {
+                if (!allBudgetCategories[subcat]) {
+                    allBudgetCategories[subcat] = { name: subcat, emoji: '' };
+                }
+            });
+        });
+        return allBudgetCategories;
+    }
+    transactionMainCategorySelect.addEventListener('change', (e) => {
+        const mainCategory = e.target.value;
+        transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        if (!mainCategory) {
+            transactionSubCategorySelect.disabled = true;
+            return;
+        }
+        transactionSubCategorySelect.disabled = false;
+        const allBudgetCategories = getAllBudgetCategories();
+        if (allBudgetCategories[mainCategory]) {
+            allBudgetCategories[mainCategory].forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub.name;
+                option.textContent = `${sub.emoji} ${sub.name}`;
+                transactionSubCategorySelect.appendChild(option);
+            });
+        }
+    });
+
     // --- Add Task Functionality ---
     const addTaskBtn = document.getElementById('add-task-btn');
-    addTaskBtn.addEventListener('click', () => {
+    addTaskBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         const mainCategory = taskMainCategorySelect.value;
         const subCategory = taskSubCategorySelect.value;
         const description = document.getElementById('task-description-input').value.trim();
@@ -1183,9 +1215,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Add Transaction Functionality ---
     const addTransactionBtn = document.getElementById('add-transaction-btn');
-    addTransactionBtn.addEventListener('click', () => {
-        const mainCategory = document.getElementById('transaction-main-category-select').value;
-        const subCategory = document.getElementById('transaction-sub-category-select').value;
+    addTransactionBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const mainCategory = transactionMainCategorySelect.value;
+        const subCategory = transactionSubCategorySelect.value;
         const description = document.getElementById('transaction-description-input').value.trim();
         const amount = parseFloat(document.getElementById('transaction-amount-input').value);
         const date = document.getElementById('transaction-date-input').value;
@@ -1210,9 +1243,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboard();
 
         // Reset form
-        document.getElementById('transaction-main-category-select').value = '';
-        document.getElementById('transaction-sub-category-select').innerHTML = '<option value="">-- Select Sub-Category --</option>';
-        document.getElementById('transaction-sub-category-select').disabled = true;
+        transactionMainCategorySelect.value = '';
+        transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        transactionSubCategorySelect.disabled = true;
         document.getElementById('transaction-description-input').value = '';
         document.getElementById('transaction-amount-input').value = '';
         document.getElementById('transaction-date-input').value = '';
@@ -1220,7 +1253,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Add Note Functionality ---
     const addNoteBtn = document.getElementById('add-note-btn');
-    addNoteBtn.addEventListener('click', () => {
+    addNoteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         const title = document.getElementById('note-title-input').value.trim();
         const content = document.getElementById('note-content-input').value.trim();
         const category = document.getElementById('note-category-input').value;
@@ -1258,7 +1292,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Add Goal Functionality ---
     const addGoalBtn = document.getElementById('add-goal-btn');
-    addGoalBtn.addEventListener('click', () => {
+    addGoalBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         const category = document.getElementById('goal-category-select').value;
         const specific = document.getElementById('goal-specific-input').value.trim();
         const measurableMetric = document.getElementById('goal-measurable-metric-input').value.trim();
