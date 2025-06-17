@@ -269,8 +269,6 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col theme-light">
-    <!-- ...existing code... -->
-
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
@@ -740,6 +738,22 @@
 
     <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM Elements (move these to the top so all functions can use them) ---
+    const themeSwitcher = document.getElementById('theme-switcher');
+    const exportDataBtn = document.getElementById('export-data-btn');
+    const importDataInput = document.getElementById('import-data-input');
+    const shareSummaryBtn = document.getElementById('share-summary-btn');
+    const shareSummaryModal = document.getElementById('share-summary-modal');
+    const shareSummaryTextarea = document.getElementById('share-summary-textarea');
+    const closeShareSummaryModal = document.getElementById('close-share-summary-modal');
+    const copyShareSummaryBtn = document.getElementById('copy-share-summary-btn');
+
+    const dashboardView = document.getElementById('dashboard-view');
+    const tasksView = document.getElementById('tasks-view');
+    const budgetView = document.getElementById('budget-view');
+    const notesView = document.getElementById('notes-view');
+    const goalsView = document.getElementById('goals-view');
+
     // --- LocalStorage Data Schema & Migration ---
 
     // Versioned schema for future-proofing
@@ -900,7 +914,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Theme Customization ---
-    const themeSwitcher = document.getElementById('theme-switcher');
     const themeClassMap = {
         light: 'theme-light',
         dark: 'theme-dark',
@@ -925,97 +938,114 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     loadTheme();
 
-    // --- Export/Import/Share Summary ---
-    const exportDataBtn = document.getElementById('export-data-btn');
-    const importDataInput = document.getElementById('import-data-input');
-    const shareSummaryBtn = document.getElementById('share-summary-btn');
-    const shareSummaryModal = document.getElementById('share-summary-modal');
-    const shareSummaryTextarea = document.getElementById('share-summary-textarea');
-    const closeShareSummaryModal = document.getElementById('close-share-summary-modal');
-    const copyShareSummaryBtn = document.getElementById('copy-share-summary-btn');
+    // --- Navigation Event Listeners (fix: must be after DOM elements and showView definition) ---
+    function showView(viewToShow) {
+        const allViews = document.querySelectorAll('.module-view');
+        allViews.forEach(view => view.classList.add('hidden'));
+        viewToShow.classList.remove('hidden');
+        fadeInView(viewToShow);
+        // Update nav link styling
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('text-blue-200', 'font-bold', 'underline');
+            link.classList.add('text-white', 'font-medium');
+        });
+        const activeNavLinkId = `nav-${viewToShow.id.replace('-view', '')}`;
+        const activeNavLink = document.getElementById(activeNavLinkId);
+        if (activeNavLink) {
+            activeNavLink.classList.remove('text-white', 'font-medium');
+            activeNavLink.classList.add('text-blue-200', 'font-bold', 'underline');
+        }
+    }
 
-    // Helper: Gather all app data
-    function getAllAppData() {
-        return {
-            tasks: JSON.parse(localStorage.getItem('personalAssistantTasks') || '[]'),
-            transactions: JSON.parse(localStorage.getItem('personalAssistantTransactions') || '[]'),
-            notes: JSON.parse(localStorage.getItem('personalAssistantNotes') || '[]'),
-            goals: JSON.parse(localStorage.getItem('personalAssistantGoals') || '[]'),
-            budgetGoals: JSON.parse(localStorage.getItem('personalAssistantBudgetGoals') || '{}'),
-            customBudgetCategories: JSON.parse(localStorage.getItem('personalAssistantCustomBudgetCategories') || '{"Income":[],"Expense":[],"Savings":[],"Invest":[]}')
-        };
-    }
-    // Helper: Validate imported data
-    function validateAppData(data) {
-        if (!data) return false;
-        if (!Array.isArray(data.tasks) || !Array.isArray(data.transactions) || !Array.isArray(data.notes) || !Array.isArray(data.goals)) return false;
-        if (typeof data.budgetGoals !== 'object' || typeof data.customBudgetCategories !== 'object') return false;
-        return true;
-    }
-    // Export
-    exportDataBtn.addEventListener('click', () => {
-        const data = getAllAppData();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'personal-assistant-data.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    document.getElementById('nav-dashboard').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView(dashboardView);
     });
-    // Import
+    document.getElementById('nav-tasks').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView(tasksView);
+    });
+    document.getElementById('nav-budget').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView(budgetView);
+    });
+    document.getElementById('nav-notes').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView(notesView);
+    });
+    document.getElementById('nav-goals').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView(goalsView);
+    });
+
+    // Show dashboard by default
+    showView(dashboardView);
+
+    // --- Export/Import/Share Summary (fix: use appData for export/import, and ensure only one handler per button) ---
+    exportDataBtn.addEventListener('click', () => {
+        showLoading("Exporting data...");
+        setTimeout(() => {
+            const data = getAllAppData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'personal-assistant-data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            hideLoading();
+        }, 500);
+    });
+
     importDataInput.addEventListener('change', (e) => {
+        showLoading("Importing data...");
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file) { hideLoading(); return; }
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
                 if (!validateAppData(data)) {
                     alert('Invalid data format. Import failed.');
+                    hideLoading();
                     return;
                 }
-                localStorage.setItem('personalAssistantTasks', JSON.stringify(data.tasks));
-                localStorage.setItem('personalAssistantTransactions', JSON.stringify(data.transactions));
-                localStorage.setItem('personalAssistantNotes', JSON.stringify(data.notes));
-                localStorage.setItem('personalAssistantGoals', JSON.stringify(data.goals));
-                localStorage.setItem('personalAssistantBudgetGoals', JSON.stringify(data.budgetGoals));
-                localStorage.setItem('personalAssistantCustomBudgetCategories', JSON.stringify(data.customBudgetCategories));
-                alert('Data imported successfully! The page will now reload.');
-                location.reload();
+                // Save to new schema
+                saveAppData(data);
+                setTimeout(() => {
+                    hideLoading();
+                    alert('Data imported successfully! The page will now reload.');
+                    location.reload();
+                }, 500);
             } catch (err) {
+                hideLoading();
                 alert('Failed to import data: ' + err.message);
             }
         };
         reader.readAsText(file);
     });
-    // Share Summary
+
     shareSummaryBtn.addEventListener('click', () => {
         const data = getAllAppData();
         let summary = '';
-        // Tasks
         summary += `=== Tasks (${data.tasks.length}) ===\n`;
         data.tasks.forEach(t => {
             summary += `- [${t.completed ? 'x' : ' '}] ${t.fullDescription || t.description} (Due: ${t.date}, Priority: ${t.priority})\n`;
         });
-        // Notes
         summary += `\n=== Notes (${data.notes.length}) ===\n`;
         data.notes.forEach(n => {
             summary += `- ${n.title} (${n.category || 'General'})\n`;
         });
-        // Budget
         summary += `\n=== Transactions (${data.transactions.length}) ===\n`;
         data.transactions.forEach(tr => {
             summary += `- ${tr.mainCategory}/${tr.subCategory}: $${tr.amount} (${tr.description}, ${tr.date})\n`;
         });
-        // Goals
         summary += `\n=== Goals (${data.goals.length}) ===\n`;
         data.goals.forEach(g => {
             summary += `- ${g.specific} [${g.category}] Progress: ${g.currentProgress}/${g.measurableTarget} (${g.measurableMetric}) Deadline: ${g.targetDate}\n`;
         });
-        // Budget Goals
         summary += `\n=== Budget Goals ===\n`;
         Object.keys(data.budgetGoals).forEach(month => {
             summary += `- ${month}:\n`;
@@ -1361,7 +1391,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTransactions();
     renderNotes();
     renderGoals();
-    updateDashboard();
 });
     </script>
 </body>
