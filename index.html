@@ -1133,8 +1133,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Budget Sub-Category Dynamic Loading ---
     const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
     const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
+
     function getAllBudgetCategories() {
-        const predefinedCategories = {
+         const predefinedCategories = {
             "Income": [
                 { "name": "Salary", "emoji": "💼" },
                 { "name": "Business", "emoji": "🏢" },
@@ -1221,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newTask = {
-            id: Date.now() + Math.floor(Math.random() * 1000),
+            id: Date.now(), // Simplified ID generation
             mainCategory,
             subCategory,
             description,
@@ -1267,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newTransaction = {
-            id: Date.now() + Math.floor(Math.random() * 1000),
+            id: Date.now(), // Simplified ID generation
             mainCategory,
             subCategory,
             description,
@@ -1304,7 +1305,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newNote = {
-            id: Date.now() + Math.floor(Math.random() * 1000),
+            id: Date.now(), // Simplified ID generation
             title,
             content,
             category: category || null,
@@ -1346,7 +1347,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newGoal = {
-            id: Date.now() + Math.floor(Math.random() * 1000),
+            id: Date.now(), // Simplified ID generation
             category,
             specific,
             measurableMetric,
@@ -1383,7 +1384,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTransactions();
     renderNotes();
     renderGoals();
-    updateDashboard();
 });
     </script>
 </body>
