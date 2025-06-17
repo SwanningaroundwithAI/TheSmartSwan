@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Assistant</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0; /* Light blue-gray track */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* Darker blue-gray thumb */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* Even darker blue-gray on hover */
+        }
+        /* Styles for urgent task */
+        .urgent-task {
+            background-color: #fffbeb !important; /* Bright yellow background */
+            border-color: #fcd34d !important; /* Yellow border */
+        }
+        /* Styles for blocked/dependent tasks */
+        .blocked-task {
+            background-color: #e0e7ff !important; /* Light blue */
+            border-color: #93c5fd !important; /* Blue border */
+            opacity: 0.7;
+            pointer-events: none; /* Disable interaction */
+        }
+        .blocked-task .text-gray-800 {
+            color: #6b7280 !important; /* Darker gray for text */
+        }
+        canvas {
+            display: block; /* Remove extra space below canvas */
+            max-width: 100%;
+            height: auto;
+        }
+        .note-content-preview {
+            max-height: 60px; /* Limit height of preview */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; /* Prevent wrapping in preview */
+        }
+        .note-full-content {
+            white-space: pre-wrap; /* Preserve whitespace and line breaks for full content */
+            word-wrap: break-word;
+        }
+        .markdown-rendered h1 { font-size: 2em; margin-top: 0.67em; margin-bottom: 0.67em; font-weight: bold; }
+        .markdown-rendered strong { font-weight: bold; }
+        .markdown-rendered em { font-style: italic; }
+
+        .vision-board-preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minminmax(80px, 1fr));
+            gap: 8px;
+            padding: 8px;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+            min-height: 100px;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .vision-board-image-item {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .vision-board-image-item:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg rounded-b-lg">
+        <div class="container mx-auto flex items-center justify-between">
+            <h1 class="text-3xl font-bold flex items-center">
+                <i class="fas fa-robot mr-3 text-blue-200"></i> Personal Assistant
+            </h1>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="#" id="nav-dashboard" class="nav-link text-lg font-medium hover:text-blue-200 transition-colors duration-200">Dashboard</a></li>
+                    <li><a href="#" id="nav-tasks" class="nav-link text-lg font-medium hover:text-blue-200 transition-colors duration-200">Tasks</a></li>
+                    <li><a href="#" id="nav-budget" class="nav-link text-lg font-medium hover:text-blue-200 transition-colors duration-200">Budget</a></li>
+                    <li><a href="#" id="nav-notes" class="nav-link text-lg font-medium hover:text-blue-200 transition-colors duration-200">Notes</a></li>
+                    <li><a href="#" id="nav-goals" class="nav-link text-lg font-medium hover:text-blue-200 transition-colors duration-200">Goals</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 md:p-8 container mx-auto">
+
+        <!-- Dashboard View -->
+        <section id="dashboard-view" class="module-view bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-home mr-3 text-indigo-500"></i> Dashboard Overview
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Upcoming Tasks Summary -->
+                <div class="bg-blue-50 p-5 rounded-lg shadow-md border border-blue-200">
+                    <h3 class="text-xl font-medium text-blue-700 mb-3 flex items-center"><i class="fas fa-clipboard-list mr-2"></i> Upcoming Tasks</h3>
+                    <p id="dashboard-tasks-summary" class="text-gray-700 text-lg">No upcoming tasks.</p>
+                </div>
+
+                <!-- Task Statistics Summary -->
+                <div class="bg-blue-50 p-5 rounded-lg shadow-md border border-blue-200">
+                    <h3 class="text-xl font-medium text-blue-700 mb-3 flex items-center"><i class="fas fa-chart-line mr-2"></i> Task Statistics</h3>
+                    <p id="dashboard-task-stats" class="text-gray-700 text-lg">Total: 0, Completed: 0, Overdue: 0</p>
+                </div>
+
+                <!-- Budget Overview Summary -->
+                <div class="bg-green-50 p-5 rounded-lg shadow-md border border-green-200">
+                    <h3 class="text-xl font-medium text-green-700 mb-3 flex items-center"><i class="fas fa-wallet mr-2"></i> Budget Overview</h3>
+                    <p id="dashboard-budget-summary" class="text-gray-700 text-lg">No budget data.</p>
+                </div>
+
+                <!-- Money Left in Kitty -->
+                <div class="bg-green-50 p-5 rounded-lg shadow-md border border-green-200">
+                    <h3 class="text-xl font-medium text-green-700 mb-3 flex items-center"><i class="fas fa-piggy-bank mr-2"></i> Money Left This Month</h3>
+                    <p id="dashboard-money-left" class="text-gray-700 text-lg font-bold text-green-800">$0.00</p>
+                </div>
+
+                <!-- Recent Notes Summary -->
+                <div class="bg-purple-50 p-5 rounded-lg shadow-md border border-purple-200">
+                    <h3 class="text-xl font-medium text-purple-700 mb-3 flex items-center"><i class="fas fa-sticky-note mr-2"></i> Recent Notes</h3>
+                    <p id="dashboard-notes-summary" class="text-gray-700 text-lg">No recent notes.</p>
+                </div>
+
+                <!-- Daily Recommendations -->
+                <div class="bg-yellow-50 p-5 rounded-lg shadow-md border border-yellow-200">
+                    <h3 class="text-xl font-medium text-yellow-700 mb-3 flex items-center"><i class="fas fa-lightbulb mr-2"></i> Daily Recommendation</h3>
+                    <p id="dashboard-recommendation" class="text-gray-700 text-lg">"Take a short walk to clear your mind!"</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Task Management View -->
+        <section id="tasks-view" class="module-view hidden bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-tasks mr-3 text-blue-500"></i> Task Management
+            </h2>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Add New Task</h3>
+                    <div class="bg-gray-100 p-5 rounded-lg shadow-inner">
+                        <!-- Main Category -->
+                        <div class="mb-3">
+                            <label for="task-main-category-select" class="block text-gray-700 text-sm font-bold mb-2">Main Category:</label>
+                            <select id="task-main-category-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">-- Select Main Category --</option>
+                                <option value="Work/Productivity">Work/Productivity 💼</option>
+                                <option value="Personal/Home">Personal/Home 🏠</option>
+                                <option value="Creative/Hobbies">Creative/Hobbies 🎨</option>
+                            </select>
+                        </div>
+
+                        <!-- Sub Category (dynamically loaded) -->
+                        <div class="mb-3">
+                            <label for="task-sub-category-select" class="block text-gray-700 text-sm font-bold mb-2">Sub-Category:</label>
+                            <select id="task-sub-category-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" disabled>
+                                <option value="">-- Select Sub-Category --</option>
+                            </select>
+                        </div>
+
+                        <!-- Specific Description -->
+                        <div class="mb-3">
+                            <label for="task-description-input" class="block text-gray-700 text-sm font-bold mb-2">Specific Description:</label>
+                            <input type="text" id="task-description-input" placeholder="e.g., 'Draft project report', 'Water plants'" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <input type="date" id="task-date-input" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+
+                        <!-- Priority -->
+                        <select id="task-priority-select" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Low">Low Priority</option>
+                            <option value="Medium">Medium Priority</option>
+                            <option value="High">High Priority</option>
+                            <option value="Urgent">Urgent Priority</option>
+                        </select>
+
+                        <!-- Recurring Task Options -->
+                        <div class="flex items-center mb-3">
+                            <input type="checkbox" id="task-recurring-checkbox" class="mr-2 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="task-recurring-checkbox" class="text-gray-700">Recurring Task</label>
+                        </div>
+                        <div id="recurring-options" class="hidden mb-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                            <label for="task-recurrence-frequency" class="block text-gray-700 text-sm font-bold mb-2">Frequency:</label>
+                            <select id="task-recurrence-frequency" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="fortnightly">Fortnightly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="task-exclude-weekends-checkbox" class="mr-2 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="task-exclude-weekends-checkbox" class="text-gray-700">Exclude Weekends</label>
+                            </div>
+                        </div>
+
+                        <!-- Task Dependency -->
+                        <div class="mb-4">
+                            <label for="task-dependency-select" class="block text-gray-700 text-sm font-bold mb-2">Depends on Task (optional):</label>
+                            <select id="task-dependency-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">-- No Dependency --</option>
+                                <!-- Tasks will be dynamically loaded here -->
+                            </select>
+                        </div>
+
+                        <button id="add-task-btn" class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors duration-200 font-semibold shadow-md">Add Task</button>
+                    </div>
+                </div>
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Your Tasks</h3>
+                    <ul id="tasks-list" class="space-y-3">
+                        <!-- Tasks will be dynamically loaded here -->
+                        <li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                            <span>No tasks added yet.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Budget Tracking View -->
+        <section id="budget-view" class="module-view hidden bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-pie mr-3 text-green-500"></i> Budget Tracking
+            </h2>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Add Transaction</h3>
+                    <div class="bg-gray-100 p-5 rounded-lg shadow-inner mb-6">
+                        <div class="mb-3">
+                            <label for="transaction-main-category-select" class="block text-gray-700 text-sm font-bold mb-2">Main Category:</label>
+                            <select id="transaction-main-category-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                                <option value="">-- Select Main Category --</option>
+                                <option value="Income">Income</option>
+                                <option value="Expense">Expense</option>
+                                <option value="Savings">Savings</option>
+                                <option value="Invest">Invest</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="transaction-sub-category-select" class="block text-gray-700 text-sm font-bold mb-2">Sub-Category:</label>
+                            <select id="transaction-sub-category-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" disabled>
+                                <option value="">-- Select Sub-Category --</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new-sub-category-input" class="block text-gray-700 text-sm font-bold mb-2">Add New Sub-Category (Optional):</label>
+                            <input type="text" id="new-sub-category-input" placeholder="e.g., 'Coffee', 'New Stock'" class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                            <button id="add-new-sub-category-btn" class="mt-2 w-full bg-gray-400 text-white py-2 rounded-md hover:bg-gray-500 transition-colors duration-200 text-sm">Add Custom Sub-Category</button>
+                        </div>
+
+                        <input type="text" id="transaction-description-input" placeholder="Description (e.g., 'Monthly Salary')" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                        <input type="number" id="transaction-amount-input" placeholder="Amount (e.g., 500.00)" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                        <input type="date" id="transaction-date-input" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                        <button id="add-transaction-btn" class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition-colors duration-200 font-semibold shadow-md">Add Transaction</button>
+                    </div>
+
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Set Monthly Budget Goals</h3>
+                    <div class="bg-gray-100 p-5 rounded-lg shadow-inner">
+                        <div class="mb-3">
+                            <label for="budget-goal-subcategory-select" class="block text-gray-700 text-sm font-bold mb-2">Sub-Category for Goal:</label>
+                            <select id="budget-goal-subcategory-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                                <option value="">-- Select Sub-Category --</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <input type="number" id="budget-goal-amount-input" placeholder="Monthly Goal Amount" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                        <button id="set-budget-goal-btn" class="w-full bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-700 transition-colors duration-200 font-semibold shadow-md">Set Goal</button>
+                    </div>
+                </div>
+
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Your Transactions</h3>
+                    <div class="bg-blue-100 p-4 rounded-lg shadow-md mb-4 text-blue-800 font-semibold flex justify-between items-center">
+                        <span>Current Balance: <span id="current-balance">$0.00</span></span>
+                        <span>Money Left This Month: <span id="money-left-this-month" class="font-bold text-green-800">$0.00</span></span>
+                    </div>
+                    <ul id="transactions-list" class="space-y-3 mb-6">
+                        <!-- Transactions will be dynamically loaded here -->
+                        <li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                            <span>No transactions added yet.</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Monthly Budget Goals Progress</h3>
+                    <ul id="budget-goals-list" class="space-y-3 mb-6">
+                        <!-- Budget goals and progress will be dynamically loaded here -->
+                        <li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                            <span>No budget goals set yet.</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Spending Insights (Current Month)</h3>
+                    <div class="bg-gray-100 p-5 rounded-lg shadow-inner mb-6">
+                        <canvas id="spendingChart" class="w-full h-64"></canvas>
+                        <div id="spending-insights-text" class="text-gray-700 mt-4">
+                            <!-- Spending breakdown text will be here -->
+                            <p>No spending data for this month.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Spending Recommendations</h3>
+                    <div class="bg-yellow-50 p-5 rounded-lg shadow-md border border-yellow-200" id="spending-recommendation-output">
+                        <p>No recommendations yet. Start tracking your spending!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Note-Taking View -->
+        <section id="notes-view" class="module-view hidden bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-edit mr-3 text-purple-500"></i> Notes: Your Brain Dump Space 🧠
+            </h2>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Add New Note</h3>
+                    <div class="bg-gray-100 p-5 rounded-lg shadow-inner">
+                        <!-- Note Templates -->
+                        <div class="mb-3">
+                            <label for="note-template-select" class="block text-gray-700 text-sm font-bold mb-2">Use Template:</label>
+                            <select id="note-template-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
+                                <option value="">-- Select a template --</option>
+                                <option value="Meeting Minutes">Meeting Minutes 📝</option>
+                                <option value="Idea Brainstorm">Idea Brainstorm 💡</option>
+                                <option value="Daily Journal">Daily Journal ✍️</option>
+                                <option value="Quick Thought">Quick Thought 🤔</option>
+                            </select>
+                        </div>
+                        <input type="text" id="note-title-input" placeholder="Note Title" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
+                        <textarea id="note-content-input" placeholder="Note content... (basic markdown supported: **bold**, *italic*, # Heading)" rows="8" class="w-full p-3 mb-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"></textarea>
+
+                        <div class="mb-3">
+                            <label for="note-category-input" class="block text-gray-700 text-sm font-bold mb-2">Category:</label>
+                            <select id="note-category-input" class="w-full p-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
+                                <option value="">-- Select Category --</option>
+                                <option value="Idea">Idea</option>
+                                <option value="Meeting">Meeting</option>
+                                <option value="Journal">Journal</option>
+                                <option value="Reference">Reference</option>
+                                <option value="Random">Random</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="note-tags-input" class="block text-gray-700 text-sm font-bold mb-2">Tags (comma separated):</label>
+                            <input type="text" id="note-tags-input" placeholder="e.g., work, projectA, important" class="w-full p-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="note-color-input" class="block text-gray-700 text-sm font-bold mb-2">Note Color:</label>
+                            <input type="color" id="note-color-input" value="#ffffff" class="w-full h-10 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 cursor-pointer">
+                        </div>
+
+                        <button id="add-note-btn" class="w-full bg-purple-600 text-white py-3 rounded-md hover:bg-purple-700 transition-colors duration-200 font-semibold shadow-md">Add Note</button>
+                    </div>
+                </div>
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Your Notes</h3>
+                    <input type="text" id="note-search-input" placeholder="Search notes..." class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500">
+                    <ul id="notes-list" class="space-y-3">
+                        <!-- Notes will be dynamically loaded here -->
+                        <li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                            <span>No notes added yet.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Goal Setting View -->
+        <section id="goals-view" class="module-view hidden bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-bullseye mr-3 text-yellow-500"></i> Goal Setting
+            </h2>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Create New Goal</h3>
+                    <div class="bg-gray-100 p-5 rounded-lg shadow-inner">
+                        <!-- Goal Category -->
+                        <div class="mb-3">
+                            <label for="goal-category-select" class="block text-gray-700 text-sm font-bold mb-2">Category:</label>
+                            <select id="goal-category-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                                <option value="">-- Select Category --</option>
+                                <option value="Career & Learning">Career & Learning 📈</option>
+                                <option value="Health & Wellness">Health & Wellness ❤️</option>
+                                <option value="Financial">Financial 💰</option>
+                                <option value="Personal Growth">Personal Growth 🌱</option>
+                                <option value="Relationships">Relationships 🤝</option>
+                                <option value="Creative Projects">Creative Projects 🎨</option>
+                                <option value="Adventure & Fun">Adventure & Fun 🌍</option>
+                                <option value="Contribution">Contribution ✨</option>
+                            </select>
+                        </div>
+
+                        <!-- SMART Fields -->
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">SMART Goal Details:</h4>
+                        <div class="mb-3">
+                            <label for="goal-specific-input" class="block text-gray-700 text-sm font-bold mb-2">Specific Goal:</label>
+                            <input type="text" id="goal-specific-input" placeholder="e.g., 'Run a full marathon'" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
+                        <div class="mb-3 grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="goal-measurable-metric-input" class="block text-gray-700 text-sm font-bold mb-2">Measurable Metric:</label>
+                                <input type="text" id="goal-measurable-metric-input" placeholder="e.g., 'distance in km', 'books read'" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label for="goal-measurable-target-input" class="block text-gray-700 text-sm font-bold mb-2">Target Value:</label>
+                                <input type="number" id="goal-measurable-target-input" placeholder="e.g., '42.195', '10'" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="goal-current-progress-input" class="block text-gray-700 text-sm font-bold mb-2">Current Progress Value:</label>
+                            <input type="number" id="goal-current-progress-input" placeholder="e.g., '0', '2'" value="0" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
+                        <div class="mb-3">
+                            <label for="goal-achievable-input" class="block text-gray-700 text-sm font-bold mb-2">Achievable Steps:</label>
+                            <textarea id="goal-achievable-input" placeholder="Outline steps to achieve this goal..." rows="3" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="goal-why-matters-input" class="block text-gray-700 text-sm font-bold mb-2">Why This Matters (Relevant):</label>
+                            <textarea id="goal-why-matters-input" placeholder="Why is this goal important to you?" rows="3" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label for="goal-target-date-input" class="block text-gray-700 text-sm font-bold mb-2">Deadline (Time-bound):</label>
+                            <input type="date" id="goal-target-date-input" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
+
+                        <!-- Vision Board -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Vision Board:</label>
+                            <input type="file" id="goal-vision-board-upload" accept="image/*" multiple class="w-full p-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                            <div id="vision-board-preview" class="vision-board-preview-container mt-2">
+                                <p class="text-gray-500 text-sm">Upload images for your vision board.</p>
+                            </div>
+                        </div>
+
+                        <!-- Linked Notes and Tasks -->
+                        <div class="mb-3">
+                            <label for="goal-link-notes-select" class="block text-gray-700 text-sm font-bold mb-2">Link Notes (Optional):</label>
+                            <select id="goal-link-notes-select" multiple class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 h-24">
+                                <!-- Notes loaded dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="goal-link-tasks-select" class="block text-gray-700 text-sm font-bold mb-2">Link Tasks (Optional):</label>
+                            <select id="goal-link-tasks-select" multiple class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 h-24">
+                                <!-- Tasks loaded dynamically -->
+                            </select>
+                        </div>
+
+                        <button id="add-goal-btn" class="w-full bg-yellow-600 text-white py-3 rounded-md hover:bg-yellow-700 transition-colors duration-200 font-semibold shadow-md">Create Goal</button>
+                    </div>
+                </div>
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-medium text-gray-700 mb-4">Your Goals</h3>
+                    <!-- Filter/Sort Controls -->
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <div class="flex-1 min-w-[150px]">
+                            <label for="goal-filter-category" class="block text-gray-700 text-sm font-bold mb-1">Filter by Category:</label>
+                            <select id="goal-filter-category" class="w-full p-2 border border-gray-300 rounded-md">
+                                <option value="">All Categories</option>
+                                <option value="Career & Learning">Career & Learning</option>
+                                <option value="Health & Wellness">Health & Wellness</option>
+                                <option value="Financial">Financial</option>
+                                <option value="Personal Growth">Personal Growth</option>
+                                <option value="Relationships">Relationships</option>
+                                <option value="Creative Projects">Creative Projects</option>
+                                <option value="Adventure & Fun">Adventure & Fun</option>
+                                <option value="Contribution">Contribution</option>
+                            </select>
+                        </div>
+                        <div class="flex-1 min-w-[150px]">
+                            <label for="goal-sort-by" class="block text-gray-700 text-sm font-bold mb-1">Sort By:</label>
+                            <select id="goal-sort-by" class="w-full p-2 border border-gray-300 rounded-md">
+                                <option value="deadline-asc">Deadline (Soonest First)</option>
+                                <option value="deadline-desc">Deadline (Latest First)</option>
+                                <option value="created-asc">Created Date (Oldest First)</option>
+                                <option value="created-desc">Created Date (Newest First)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <ul id="goals-list" class="space-y-3">
+                        <!-- Goals will be dynamically loaded here -->
+                        <li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                            <span>No goals added yet.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white p-4 text-center rounded-t-lg shadow-inner">
+        <p>&copy; 2025 Personal Assistant. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // --- View Switching Logic (Moved to global scope) ---
+        const showView = (viewToShow) => {
+            const allViews = document.querySelectorAll('.module-view');
+            allViews.forEach(view => view.classList.add('hidden')); // Hide all views
+            viewToShow.classList.remove('hidden'); // Show the selected view
+
+            // Update active navigation link styling
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('text-blue-200', 'font-bold', 'underline');
+                link.classList.add('text-white', 'font-medium');
+            });
+            // Assuming nav links have IDs like 'nav-dashboard', 'nav-tasks', etc.
+            const activeNavLinkId = `nav-${viewToShow.id.replace('-view', '')}`;
+            const activeNavLink = document.getElementById(activeNavLinkId);
+            if (activeNavLink) {
+                activeNavLink.classList.remove('text-white', 'font-medium');
+                activeNavLink.classList.add('text-blue-200', 'font-bold', 'underline');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const dashboardView = document.getElementById('dashboard-view');
+            const tasksView = document.getElementById('tasks-view');
+            const budgetView = document.getElementById('budget-view');
+            const notesView = document.getElementById('notes-view');
+            const goalsView = document.getElementById('goals-view');
+
+            const navDashboard = document.getElementById('nav-dashboard');
+            const navTasks = document.getElementById('nav-tasks');
+            const navBudget = document.getElementById('nav-budget');
+            const navNotes = document.getElementById('nav-notes');
+            const navGoals = document.getElementById('nav-goals');
+
+            // Dashboard Summary Elements
+            const dashboardTasksSummary = document.getElementById('dashboard-tasks-summary');
+            const dashboardBudgetSummary = document.getElementById('dashboard-budget-summary');
+            const dashboardNotesSummary = document.getElementById('dashboard-notes-summary');
+            const dashboardRecommendation = document.getElementById('dashboard-recommendation');
+            const dashboardTaskStats = document.getElementById('dashboard-task-stats');
+            const dashboardMoneyLeft = document.getElementById('dashboard-money-left');
+
+            // Task Module Elements
+            const taskMainCategorySelect = document.getElementById('task-main-category-select');
+            const taskSubCategorySelect = document.getElementById('task-sub-category-select');
+            const taskDescriptionInput = document.getElementById('task-description-input');
+            const taskDateInput = document.getElementById('task-date-input');
+            const addTaskBtn = document.getElementById('add-task-btn');
+            const tasksList = document.getElementById('tasks-list');
+            const taskPrioritySelect = document.getElementById('task-priority-select');
+            const taskRecurringCheckbox = document.getElementById('task-recurring-checkbox');
+            const recurringOptions = document.getElementById('recurring-options');
+            const taskRecurrenceFrequency = document.getElementById('task-recurrence-frequency');
+            const taskExcludeWeekendsCheckbox = document.getElementById('task-exclude-weekends-checkbox');
+            const taskDependencySelect = document.getElementById('task-dependency-select');
+
+            // Budget Module Elements
+            const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
+            const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
+            const newSubCategoryInput = document.getElementById('new-sub-category-input');
+            const addNewSubCategoryBtn = document.getElementById('add-new-sub-category-btn');
+            const transactionDescriptionInput = document.getElementById('transaction-description-input');
+            const transactionAmountInput = document.getElementById('transaction-amount-input');
+            const transactionDateInput = document.getElementById('transaction-date-input');
+            const addTransactionBtn = document.getElementById('add-transaction-btn');
+            const transactionsList = document.getElementById('transactions-list');
+            const currentBalanceDisplay = document.getElementById('current-balance');
+            const moneyLeftThisMonthDisplay = document.getElementById('money-left-this-month');
+            const budgetGoalSubcategorySelect = document.getElementById('budget-goal-subcategory-select');
+            const budgetGoalAmountInput = document.getElementById('budget-goal-amount-input');
+            const setBudgetGoalBtn = document.getElementById('set-budget-goal-btn');
+            const budgetGoalsList = document.getElementById('budget-goals-list');
+            const spendingChartCanvas = document.getElementById('spendingChart');
+            const spendingChartCtx = spendingChartCanvas.getContext('2d');
+            const spendingInsightsText = document.getElementById('spending-insights-text');
+            const spendingRecommendationOutput = document.getElementById('spending-recommendation-output');
+
+            // Note Module Elements
+            const noteTitleInput = document.getElementById('note-title-input');
+            const noteContentInput = document.getElementById('note-content-input');
+            const noteCategoryInput = document.getElementById('note-category-input');
+            const noteTagsInput = document.getElementById('note-tags-input');
+            const noteColorInput = document.getElementById('note-color-input');
+            const noteTemplateSelect = document.getElementById('note-template-select');
+            const noteSearchInput = document.getElementById('note-search-input');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const notesList = document.getElementById('notes-list');
+
+            // Goal Module Elements
+            const goalCategorySelect = document.getElementById('goal-category-select');
+            const goalSpecificInput = document.getElementById('goal-specific-input');
+            const goalMeasurableMetricInput = document.getElementById('goal-measurable-metric-input');
+            const goalMeasurableTargetInput = document.getElementById('goal-measurable-target-input');
+            const goalCurrentProgressInput = document.getElementById('goal-current-progress-input');
+            const goalAchievableInput = document.getElementById('goal-achievable-input');
+            const goalWhyMattersInput = document.getElementById('goal-why-matters-input');
+            const goalTargetDateInput = document.getElementById('goal-target-date-input');
+            const goalVisionBoardUpload = document.getElementById('goal-vision-board-upload');
+            const visionBoardPreview = document.getElementById('vision-board-preview');
+            const goalLinkNotesSelect = document.getElementById('goal-link-notes-select');
+            const goalLinkTasksSelect = document.getElementById('goal-link-tasks-select');
+            const addGoalBtn = document.getElementById('add-goal-btn');
+            const goalsList = document.getElementById('goals-list');
+            const goalFilterCategory = document.getElementById('goal-filter-category');
+            const goalSortBy = document.getElementById('goal-sort-by');
+
+            // --- Data Structures (stored in localStorage) ---
+            let tasks = JSON.parse(localStorage.getItem('personalAssistantTasks')) || [];
+            let transactions = JSON.parse(localStorage.getItem('personalAssistantTransactions')) || [];
+            let notes = JSON.parse(localStorage.getItem('personalAssistantNotes')) || [];
+            let goals = JSON.parse(localStorage.getItem('personalAssistantGoals')) || [];
+            let budgetGoals = JSON.parse(localStorage.getItem('personalAssistantBudgetGoals')) || {};
+            let customBudgetCategories = JSON.parse(localStorage.getItem('personalAssistantCustomBudgetCategories')) || {
+                "Income": [], "Expense": [], "Savings": [], "Invest": []
+            };
+
+
+            // --- Task Categories Data ---
+            const taskCategories = {
+                "Work/Productivity": [
+                    { name: "Plan", emoji: "📝" },
+                    { name: "Organize", emoji: "🗄️" },
+                    { name: "Research", emoji: "🔍" },
+                    { name: "Write", emoji: "✍️" },
+                    { name: "Create", emoji: "💡" },
+                    { name: "Build", emoji: "🛠️" },
+                    { name: "Fix", emoji: "🔧" },
+                    { name: "Analyse", emoji: "📊" },
+                    { name: "Prepare", emoji: "📋" },
+                    { name: "Present", emoji: "🗣️" },
+                    { name: "Remember", emoji: "🧠" },
+                    { name: "Other", emoji: "➡️" }
+                ],
+                "Personal/Home": [
+                    { name: "Clean", emoji: "🧹" },
+                    { name: "Cook", emoji: "🍳" },
+                    { name: "Buy", emoji: "🛍️" },
+                    { name: "Shop", emoji: "🛒" },
+                    { name: "Exercise", emoji: "🏃‍♀️" },
+                    { name: "Read", emoji: "📖" },
+                    { name: "Relax", emoji: "🧘" },
+                    { name: "Study", emoji: "📚" },
+                    { name: "Meet", emoji: "🤝" },
+                    { name: "Call", emoji: "📞" },
+                    { name: "Email", emoji: "📧" },
+                    { name: "Text", emoji: "📱" }
+                ],
+                "Creative/Hobbies": [
+                    { name: "Draw", emoji: "✏️" },
+                    { name: "Paint", emoji: "🖌️" },
+                    { name: "Write (creative)", emoji: "✍️" },
+                    { name: "Play (music/games/sports)", emoji: "🎮" },
+                    { name: "Garden", emoji: "🪴" },
+                    { name: "Learn (new skill)", emoji: "🧠" },
+                    { name: "Listen", emoji: "🎧" }
+                ]
+            };
+
+            // --- Budget Categories Data (expanded) ---
+            const defaultBudgetCategories = {
+                "Income": [
+                    { name: "Salary", emoji: "💰" },
+                    { name: "Freelance", emoji: "💻" },
+                    { name: "Investments", emoji: "📈" },
+                    { name: "Gifts", emoji: "🎁" },
+                    { name: "Other", emoji: "➡️" }
+                ],
+                "Expense": [
+                    { name: "Rent", emoji: "🏠" },
+                    { name: "Utilities", emoji: "💡" },
+                    { name: "Groceries", emoji: "🍎" },
+                    { name: "Transport", emoji: "🚗" },
+                    { name: "Dining", emoji: "🍜" },
+                    { name: "Entertainment", emoji: "🎬" },
+                    { name: "Shopping", emoji: "🛍️" },
+                    { name: "Health", emoji: "💊" },
+                    { name: "Education", emoji: "📚" },
+                    { name: "Debt Payments", emoji: "💳" },
+                    { name: "Other", emoji: "➡️" }
+                ],
+                "Savings": [
+                    { name: "Emergency Fund", emoji: "🚨" },
+                    { name: "Retirement", emoji: "🏖️" },
+                    { name: "Down Payment", emoji: "🏡" },
+                    { name: "Education", emoji: "🎓" },
+                    { name: "Vacation", emoji: "✈️" },
+                    { name: "Other", emoji: "➡️" }
+                ],
+                "Invest": [
+                    { name: "Stocks", emoji: "📊" },
+                    { name: "Real Estate", emoji: "🏘️" },
+                    { name: "Crypto", emoji: "🔗" },
+                    { name: "Bonds", emoji: "📜" },
+                    { name: "Mutual Funds", emoji: "📈" },
+                    { name: "Other", emoji: "➡️" }
+                ]
+            };
+
+            // Helper to get all categories including custom ones
+            const getAllBudgetCategories = () => {
+                const allCategories = JSON.parse(JSON.stringify(defaultBudgetCategories)); // Deep copy defaults
+                for (const mainCat in customBudgetCategories) {
+                    if (customBudgetCategories.hasOwnProperty(mainCat)) {
+                        customBudgetCategories[mainCat].forEach(customCat => {
+                            // Only add if not already present in default
+                            if (!allCategories[mainCat].some(c => c.name === customCat.name)) {
+                                allCategories[mainCat].push(customCat);
+                            }
+                        });
+                    }
+                }
+                return allCategories;
+            };
+
+            // --- Note Templates Data ---
+            const noteTemplates = {
+                "Meeting Minutes": {
+                    title: "Meeting Minutes - [Date/Topic]",
+                    content: "Date: \nAttendees: \nTopic: \n\nDiscussion: \n\nAction Items: \n- \n\nNext Steps: \n"
+                },
+                "Idea Brainstorm": {
+                    title: "Idea: ",
+                    content: "Problem: \nSolution: \nTarget Audience: \nKey Features: \nPotential Challenges: \n"
+                },
+                "Daily Journal": {
+                    title: "Journal - " + new Date().toLocaleDateString(),
+                    content: "Today I focused on: \n\nHighlights: \n\nChallenges: \n\nLearnings: \n"
+                },
+                "Quick Thought": {
+                    title: "Quick Thought - ",
+                    content: ""
+                }
+            };
+
+            // --- Goal Categories Data ---
+            const goalCategories = {
+                "Career & Learning": { emoji: "📈", suggestions: ["Plan skill development roadmap", "Identify professional networking opportunities", "Research relevant certifications", "Set weekly study hours"] },
+                "Health & Wellness": { emoji: "❤️", suggestions: ["Develop a weekly workout plan", "Create a healthy meal prep schedule", "Incorporate mindfulness practices", "Set a consistent sleep schedule"] },
+                "Financial": { emoji: "💰", suggestions: ["Track all monthly expenses", "Set up automatic savings transfers", "Research investment options", "Review debt repayment strategies"] },
+                "Personal Growth": { emoji: "🌱", suggestions: ["Identify a new skill to learn", "Practice daily affirmations", "Set aside time for reflection/journaling", "Challenge a limiting belief"] },
+                "Relationships": { emoji: "🤝", suggestions: ["Schedule regular family time", "Plan a date night with partner", "Reach out to old friends", "Practice active listening"] },
+                "Creative Projects": { emoji: "🎨", suggestions: ["Dedicate consistent time to your art/hobby", "Explore new techniques", "Seek feedback on your work", "Set a small completion milestone"] },
+                "Adventure & Fun": { emoji: "🌍", suggestions: ["Research new travel destinations", "Try a new outdoor activity", "Plan a fun outing with friends", "Explore a new restaurant or local attraction"] },
+                "Contribution": { emoji: "✨", suggestions: ["Research local volunteering opportunities", "Plan a small act of kindness daily/weekly", "Donate to a cause you care about", "Share your skills with others"] }
+            };
+
+            // --- Utility Functions ---
+
+            /**
+             * Generates a unique ID for new items.
+             * @returns {number} A unique timestamp-based ID.
+             */
+            const generateId = () => Date.now() + Math.floor(Math.random() * 1000);
+
+
+            /**
+             * Saves data to localStorage for a given key.
+             * @param {string} key - The key for localStorage.
+             * @param {Array<Object> | Object} data - The data to save.
+             */
+            const saveData = (key, data) => {
+                localStorage.setItem(key, JSON.stringify(data));
+                updateDashboard(); // Update dashboard whenever data changes
+            };
+
+            /**
+             * Formats a date string to a more readable format.
+             * @param {string} dateString - The date string (e.g., 'YYYY-MM-DD').
+             * @returns {string} Formatted date.
+             */
+            const formatDate = (dateString) => {
+                if (!dateString) return 'No Date';
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                try {
+                    return new Date(dateString + 'T00:00:00').toLocaleDateString(undefined, options); // Add T00:00:00 for consistent parsing
+                } catch (e) {
+                    console.error("Invalid date string:", dateString, e);
+                    return 'Invalid Date';
+                }
+            };
+
+            /**
+             * Gets the current month and year inībā-MM format.
+             * @returns {string} Current month and year.
+             */
+            const getCurrentMonthYear = () => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                return `${year}-${month}`;
+            };
+
+            /**
+             * Calculates a future date based on recurrence frequency and start date.
+             * @param {string} startDateString - The starting date 'YYYY-MM-DD'.
+             * @param {string} frequency - 'daily', 'weekly', 'fortnightly', 'monthly', 'yearly'.
+             * @param {boolean} excludeWeekends - Whether to skip Saturdays and Sundays.
+             * @returns {string|null} The next occurrence date in 'YYYY-MM-DD' format, or null if a valid date cannot be found.
+             */
+            const getNextRecurrenceDate = (startDateString, frequency, excludeWeekends) => {
+                let date = new Date(startDateString + 'T00:00:00'); // Add T00:00:00 to avoid timezone issues
+                let nextDate = new Date(date);
+
+                const addDays = (d, days) => {
+                    const newDate = new Date(d);
+                    newDate.setDate(newDate.getDate() + days);
+                    return newDate;
+                };
+
+                const addMonths = (d, months) => {
+                    const newDate = new Date(d);
+                    const currentDay = newDate.getDate();
+                    newDate.setMonth(newDate.getMonth() + months);
+                    // Handle month end issues (e.g., Jan 31 + 1 month = Feb 31 -> Mar 2)
+                    if (newDate.getDate() !== currentDay) {
+                        newDate.setDate(0); // Sets to the last day of the *previous* month (which is the current month's last day)
+                    }
+                    return newDate;
+                };
+
+                const addYears = (d, years) => {
+                    const newDate = new Date(d);
+                    newDate.setFullYear(newDate.getFullYear() + years);
+                    return newDate;
+                };
+
+                let attempts = 0; // Prevent infinite loops
+                const MAX_ATTEMPTS = 365 * 2;
+
+                do {
+                    attempts++;
+                    if (attempts > MAX_ATTEMPTS) {
+                        console.error("Could not find a valid recurring date within max attempts for frequency:", frequency, "and excludeWeekends:", excludeWeekends);
+                        return null;
+                    }
+
+                    switch (frequency) {
+                        case 'daily':
+                            nextDate = addDays(nextDate, 1);
+                            break;
+                        case 'weekly':
+                            nextDate = addDays(nextDate, 7);
+                            break;
+                        case 'fortnightly':
+                            nextDate = addDays(nextDate, 14);
+                            break;
+                        case 'monthly':
+                            nextDate = addMonths(nextDate, 1);
+                            break;
+                        case 'yearly':
+                            nextDate = addYears(nextDate, 1);
+                            break;
+                        default:
+                            return null;
+                    }
+                    // Loop continues if excludeWeekends is true and nextDate is a weekend
+                } while (excludeWeekends && (nextDate.getDay() === 0 || nextDate.getDay() === 6)); // 0 = Sunday, 6 = Saturday
+
+                return nextDate.toISOString().split('T')[0];
+            };
+
+            /**
+             * Converts basic Markdown to HTML.
+             * Supports: **bold**, *italic*, # Heading.
+             * @param {string} markdownText - The text with Markdown.
+             * @returns {string} HTML string.
+             */
+            const convertMarkdownToHtml = (markdownText) => {
+                let html = markdownText;
+                // Bold: **text**
+                html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                // Italic: *text*
+                html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                // Headings: # Heading, ## Subheading, etc. (up to ###)
+                html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+                html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+                html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+                return html;
+            };
+
+            // --- Dashboard Update Function ---
+            const updateDashboard = () => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Tasks Summary
+                const upcomingTasks = tasks.filter(task => !task.completed && new Date(task.date) >= today)
+                                          .sort((a, b) => new Date(a.date) - new Date(b.date));
+                if (upcomingTasks.length > 0) {
+                    const nextTask = upcomingTasks[0];
+                    dashboardTasksSummary.textContent = `Next: "${nextTask.fullDescription || nextTask.description}" by ${formatDate(nextTask.date)}`;
+                } else {
+                    dashboardTasksSummary.textContent = "No upcoming tasks.";
+                }
+
+                // Task Statistics
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(task => task.completed).length;
+                const overdueTasks = tasks.filter(task => !task.completed && new Date(task.date) < today).length;
+                dashboardTaskStats.textContent = `Total: ${totalTasks}, Completed: ${completedTasks}, Overdue: ${overdueTasks}`;
+
+                // Budget Summary
+                const currentMonthYear = getCurrentMonthYear();
+                const monthlyIncome = transactions.filter(t => t.date.startsWith(currentMonthYear) && t.mainCategory === 'Income')
+                                                 .reduce((sum, t) => sum + t.amount, 0);
+                const monthlyExpense = transactions.filter(t => t.date.startsWith(currentMonthYear) && t.mainCategory === 'Expense')
+                                                  .reduce((sum, t) => sum + t.amount, 0);
+                const moneyLeft = monthlyIncome - monthlyExpense;
+                dashboardBudgetSummary.textContent = `Income: $${monthlyIncome.toFixed(2)}, Expenses: $${monthlyExpense.toFixed(2)}`;
+                dashboardMoneyLeft.textContent = `$${moneyLeft.toFixed(2)}`;
+                dashboardMoneyLeft.className = `text-gray-700 text-lg font-bold ${moneyLeft >= 0 ? 'text-green-800' : 'text-red-800'}`;
+
+
+                // Recent Notes Summary
+                const recentNotes = notes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 1);
+                if (recentNotes.length > 0) {
+                    dashboardNotesSummary.textContent = `"${recentNotes[0].title}" (${recentNotes[0].category || 'General'})`;
+                } else {
+                    dashboardNotesSummary.textContent = "No recent notes.";
+                }
+
+                // Daily Recommendation (Placeholder - can be expanded with AI model)
+                const recommendations = [
+                    "Take a 15-minute break to stretch and refresh.",
+                    "Review your top 3 tasks for tomorrow.",
+                    "Drink a glass of water!",
+                    "Check your budget for any unusual spending.",
+                    "Write down one new idea you had today.",
+                    "Connect with a friend or family member."
+                ];
+                dashboardRecommendation.textContent = `"${recommendations[Math.floor(Math.random() * recommendations.length)]}"`;
+            };
+
+            // --- Module-specific helper functions (Definitions moved up) ---
+
+            /**
+             * Populates the sub-category dropdown based on the selected main category.
+             */
+            const populateTaskSubCategorySelect = () => { // Renamed for clarity
+                const mainCategory = taskMainCategorySelect.value;
+                taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>'; // Clear existing options
+                taskSubCategorySelect.disabled = true;
+
+                if (mainCategory && taskCategories[mainCategory]) {
+                    taskCategories[mainCategory].forEach(subCat => {
+                        const option = document.createElement('option');
+                        option.value = `${subCat.name}|${subCat.emoji}`;
+                        option.textContent = `${subCat.name} ${subCat.emoji}`;
+                        taskSubCategorySelect.appendChild(option);
+                    });
+                    taskSubCategorySelect.disabled = false;
+                }
+            };
+
+            /**
+             * Populates the task dependency select dropdown with uncompleted tasks.
+             */
+            const populateTaskDependencySelect = () => {
+                taskDependencySelect.innerHTML = '<option value="">-- No Dependency --</option>';
+                const uncompletedTasks = tasks.filter(task => !task.completed);
+
+                uncompletedTasks.forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = task.id;
+                    let displayDescription = task.fullDescription || task.description; // Use full description if available
+                    // Truncate if too long
+                    if (displayDescription.length > 50) {
+                        displayDescription = displayDescription.substring(0, 47) + '...';
+                    }
+                    option.textContent = `${displayDescription} (Due: ${formatDate(task.date)})`;
+                    taskDependencySelect.appendChild(option);
+                });
+            };
+
+            /**
+             * Smart suggestion for task priority based on due date, overdue tasks, and dependencies.
+             */
+            const suggestTaskPriority = () => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                let suggestionMade = false;
+
+                // Check for overdue tasks
+                const overdue = tasks.filter(task => !task.completed && new Date(task.date) < today);
+                if (overdue.length > 0) {
+                    taskPrioritySelect.value = 'Urgent';
+                    suggestionMade = true;
+                }
+
+                // Check for tasks due very soon (e.g., within 2 days) that are NOT blocked
+                const twoDaysFromNow = new Date(today);
+                twoDaysFromNow.setDate(today.getDate() + 2);
+
+                const upcomingUrgent = tasks.some(task => {
+                    const isBlocked = task.dependsOnTaskId && !tasks.find(t => t.id === task.dependsOnTaskId && t.completed);
+                    return !task.completed && !isBlocked &&
+                           new Date(task.date) >= today &&
+                           new Date(task.date) <= twoDaysFromNow &&
+                           task.priority !== 'Urgent'; // Only suggest if not already urgent
+                });
+
+                if (upcomingUrgent && !suggestionMade) {
+                    taskPrioritySelect.value = 'Urgent';
+                    suggestionMade = true;
+                }
+
+                // If no urgent suggestion, reset to default (e.g., Medium)
+                if (!suggestionMade) {
+                    taskPrioritySelect.value = 'Medium'; // Default to medium if nothing pressing
+                }
+            };
+
+            /**
+             * Renders the list of tasks in the UI.
+             */
+            const renderTasks = () => {
+                tasksList.innerHTML = ''; // Clear existing list
+                if (tasks.length === 0) {
+                    tasksList.innerHTML = `<li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                                            <span>No tasks added yet.</span>
+                                        </li>`;
+                    return;
+                }
+
+                // Update isBlocked status for all tasks based on their dependencies
+                tasks.forEach(task => {
+                    if (task.dependsOnTaskId) {
+                        const parentTask = tasks.find(t => t.id === task.dependsOnTaskId);
+                        task.isBlocked = parentTask ? !parentTask.completed : true; // Block if parent doesn't exist or is not completed
+                    } else {
+                        task.isBlocked = false; // Not blocked if no dependency
+                    }
+                });
+                // Re-save to ensure `isBlocked` state is persistent (important for future loads)
+                saveData('personalAssistantTasks', tasks);
+
+
+                // Sort tasks: Incomplete, then Blocked, then Overdue, then by Date, then by Priority
+                const sortedTasks = [...tasks].sort((a, b) => {
+                    // 1. Completed tasks go to the end
+                    if (a.completed !== b.completed) {
+                        return a.completed ? 1 : -1;
+                    }
+
+                    // 2. Blocked tasks after unblocked incomplete tasks
+                    if (a.isBlocked !== b.isBlocked) {
+                        return a.isBlocked ? 1 : -1;
+                    }
+
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    // 3. Overdue tasks first among incomplete/unblocked
+                    const isAOverdue = !a.completed && !a.isBlocked && dateA < today;
+                    const isBOverdue = !b.completed && !b.isBlocked && dateB < today;
+                    if (isAOverdue !== isBOverdue) {
+                        return isAOverdue ? -1 : 1;
+                    }
+
+                    // 4. Then by date
+                    if (dateA.getTime() !== dateB.getTime()) {
+                        return dateA - dateB;
+                    }
+
+                    // 5. Then by priority (Urgent > High > Medium > Low)
+                    const priorityOrder = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+                    return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+                });
+
+
+                sortedTasks.forEach(task => {
+                    // Skip original recurring task if it's just a template and its instances are rendered.
+                    // Only show the original if it's a one-off or no instances exist yet.
+                    if (task.isRecurring && !task.isRecurringInstance) {
+                        const hasInstances = tasks.some(t => t.parentId === task.id);
+                        if (hasInstances) return; // Don't display the template task itself if instances exist
+                    }
+
+
+                    const listItem = document.createElement('li');
+                    let classes = `bg-white p-4 rounded-lg shadow-md flex justify-between items-center border `;
+                    if (task.completed) {
+                        classes += 'border-green-300 bg-green-50';
+                    } else if (task.isBlocked) {
+                        classes += 'blocked-task';
+                    } else if (task.priority === 'Urgent') {
+                        classes += 'urgent-task';
+                    } else {
+                        classes += 'border-gray-200';
+                    }
+
+                    listItem.className = classes;
+
+                    const displayDescription = task.fullDescription || task.description; // Use full description
+
+                    // Find parent task's description if dependency exists
+                    let dependencyInfo = '';
+                    if (task.dependsOnTaskId) {
+                        const parentTask = tasks.find(t => t.id === task.dependsOnTaskId);
+                        if (parentTask) {
+                            dependencyInfo = `<span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">Blocked by: ${parentTask.fullDescription || parentTask.description}</span>`;
+                        } else {
+                            dependencyInfo = `<span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">Blocked (Parent Missing)</span>`;
+                        }
+                    }
+
+                    listItem.innerHTML = `
+                        <div class="flex items-center flex-1 min-w-0">
+                            <input type="checkbox" data-id="${task.id}" ${task.completed ? 'checked' : ''} ${task.isBlocked ? 'disabled' : ''} class="mr-3 w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 flex-shrink-0">
+                            <div class="flex flex-col min-w-0 flex-grow">
+                                <span class="${task.completed ? 'line-through text-gray-500' : 'text-gray-800'} text-lg font-medium truncate">
+                                    ${displayDescription}
+                                </span>
+                                <span class="text-sm text-gray-500 mt-0.5">
+                                    Due: ${formatDate(task.date)}
+                                    ${task.priority && task.priority !== 'Low' ? `<span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${task.priority === 'Urgent' ? 'bg-red-200 text-red-800' : 'bg-blue-100 text-blue-800'}">${task.priority}</span>` : ''}
+                                    ${task.isRecurring ? `<span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">Recurring</span>` : ''}
+                                    ${task.isRecurringInstance ? `<span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">Instance</span>` : ''}
+                                    ${dependencyInfo}
+                                </span>
+                            </div>
+                        </div>
+                        <button data-id="${task.id}" class="delete-task-btn text-red-500 hover:text-red-700 ml-4 p-2 rounded-full hover:bg-red-100 transition-colors duration-200 flex-shrink-0">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    tasksList.appendChild(listItem);
+                });
+                addTaskListEventListeners();
+                populateTaskDependencySelect(); // Re-populate after rendering tasks to update available dependencies
+            };
+
+            /**
+             * Adds event listeners for task checkboxes and delete buttons.
+             */
+            const addTaskListEventListeners = () => {
+                document.querySelectorAll('.delete-task-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const idToDelete = parseInt(e.currentTarget.dataset.id);
+                        const taskToDelete = tasks.find(task => task.id === idToDelete);
+
+                        // If deleting a recurring template, also delete its instances
+                        if (taskToDelete && taskToDelete.isRecurring && !taskToDelete.isRecurringInstance) {
+                            tasks = tasks.filter(task => task.id !== idToDelete && task.parentId !== idToDelete);
+                        } else {
+                            tasks = tasks.filter(task => task.id !== idToDelete);
+                        }
+
+                        // Also remove any dependencies on this task
+                        tasks.forEach(task => {
+                            if (task.dependsOnTaskId === idToDelete) {
+                                task.dependsOnTaskId = null; // Clear dependency
+                                task.isBlocked = false; // Unblock the task
+                            }
+                        });
+
+                        saveData('personalAssistantTasks', tasks);
+                        renderTasks();
+                    };
+                });
+                document.querySelectorAll('input[type="checkbox"][data-id]').forEach(checkbox => {
+                    checkbox.onchange = (e) => {
+                        const idToToggle = parseInt(e.currentTarget.dataset.id);
+                        const taskIndex = tasks.findIndex(task => task.id === idToToggle);
+
+                        if (taskIndex !== -1) {
+                            tasks[taskIndex].completed = e.currentTarget.checked;
+                            saveData('personalAssistantTasks', tasks);
+
+                            // If a task is completed, unblock any tasks that depend on it
+                            if (tasks[taskIndex].completed) {
+                                tasks.forEach(dependentTask => {
+                                    if (dependentTask.dependsOnTaskId === tasks[taskIndex].id) {
+                                        dependentTask.isBlocked = false; // Unblock the dependent task
+                                    }
+                                });
+
+                                // If a recurring instance is completed, generate the next one
+                                if (tasks[taskIndex].isRecurringInstance) {
+                                    const parentId = tasks[taskIndex].parentId;
+                                    const parentTask = tasks.find(t => t.id === parentId && t.isRecurring);
+
+                                    if (parentTask && parentTask.recurrence) {
+                                        // Generate next instance only if the completed instance is the latest one
+                                        const latestInstance = tasks
+                                            .filter(t => t.parentId === parentId && t.isRecurringInstance)
+                                            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+                                        if (latestInstance && latestInstance.id === idToToggle) {
+                                            const nextDate = getNextRecurrenceDate(tasks[taskIndex].date, parentTask.recurrence.frequency, parentTask.recurrence.excludeWeekends);
+                                            if (nextDate) {
+                                                tasks.push({
+                                                    id: generateId(),
+                                                    parentId: parentTask.id,
+                                                    description: parentTask.description,
+                                                    fullDescription: parentTask.fullDescription,
+                                                    date: nextDate,
+                                                    completed: false,
+                                                    categoryMain: parentTask.categoryMain,
+                                                    categoryMainEmoji: parentTask.categoryMainEmoji,
+                                                    categorySub: parentTask.categorySub,
+                                                    categorySubEmoji: parentTask.categorySubEmoji,
+                                                    priority: parentTask.priority,
+                                                    isRecurringInstance: true,
+                                                    dependsOnTaskId: null, // Recurring instances don't inherit direct dependency unless explicitly added
+                                                    isBlocked: false
+                                                });
+                                                saveData('personalAssistantTasks', tasks); // Save again after adding new instance
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            renderTasks(); // Re-render to update styling and dependencies
+                        }
+                    };
+                });
+            };
+
+            /**
+             * Populates the sub-category dropdown based on the selected main category.
+             * @param {string} type - 'transaction' or 'goal' to specify which select element to populate.
+             */
+            const populateBudgetSubCategorySelect = (type) => {
+                const targetSelect = type === 'transaction' ? transactionSubCategorySelect : budgetGoalSubcategorySelect;
+                const mainCategorySelect = transactionMainCategorySelect; // Main category is always from transaction select for new sub-category population logic
+
+                const mainCategory = mainCategorySelect.value;
+                targetSelect.innerHTML = '<option value="">-- Select Sub-Category --</option>'; // Clear existing options
+                targetSelect.disabled = true;
+
+                const allCategories = getAllBudgetCategories();
+
+                if (mainCategory && allCategories[mainCategory]) {
+                    allCategories[mainCategory].forEach(subCat => {
+                        const option = document.createElement('option');
+                        option.value = `${subCat.name}|${subCat.emoji}`;
+                        option.textContent = `${subCat.name} ${subCat.emoji}`;
+                        targetSelect.appendChild(option);
+                    });
+                    targetSelect.disabled = false;
+                }
+            };
+
+            /**
+             * Renders the list of transactions and updates the balance and money left.
+             */
+            const renderTransactions = () => {
+                transactionsList.innerHTML = ''; // Clear existing list
+                let totalBalance = 0;
+                const currentMonthYear = getCurrentMonthYear();
+                let monthlyIncome = 0;
+                let monthlyExpense = 0;
+
+                if (transactions.length === 0) {
+                    transactionsList.innerHTML = `<li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                                                    <span>No transactions added yet.</span>
+                                                </li>`;
+                }
+
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(transaction => { // Sort by date descending
+                    const listItem = document.createElement('li');
+                    let amountClass = 'text-gray-800';
+                    let sign = '';
+
+                    if (transaction.mainCategory === 'Income') {
+                        amountClass = 'text-green-600';
+                        sign = '+';
+                        totalBalance += transaction.amount;
+                        if (transaction.date.startsWith(currentMonthYear)) {
+                            monthlyIncome += transaction.amount;
+                        }
+                    } else if (transaction.mainCategory === 'Expense') {
+                        amountClass = 'text-red-600';
+                        sign = '-';
+                        totalBalance -= transaction.amount;
+                        if (transaction.date.startsWith(currentMonthYear)) {
+                            monthlyExpense += transaction.amount;
+                        }
+                    } else if (transaction.mainCategory === 'Savings') {
+                        amountClass = 'text-blue-600';
+                        sign = ''; // No sign for savings, just shows amount
+                    } else if (transaction.mainCategory === 'Invest') {
+                        amountClass = 'text-purple-600';
+                        sign = ''; // No sign for investments, just shows amount
+                    }
+
+
+                    listItem.className = `bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200`;
+                    listItem.innerHTML = `
+                        <span class="text-gray-800 text-lg flex-1">
+                            <span class="font-semibold">${transaction.subCategoryEmoji} ${transaction.subCategory}</span>: ${transaction.description}
+                            <span class="text-sm text-gray-500 block">(${formatDate(transaction.date)})</span>
+                        </span>
+                        <div class="flex items-center">
+                            <span class="font-semibold ${amountClass}">${sign}$${transaction.amount.toFixed(2)}</span>
+                            <button data-id="${transaction.id}" class="delete-transaction-btn text-red-500 hover:text-red-700 ml-4 p-2 rounded-full hover:bg-red-100 transition-colors duration-200">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                    transactionsList.appendChild(listItem);
+                });
+
+                currentBalanceDisplay.textContent = `$${totalBalance.toFixed(2)}`;
+                const moneyLeft = monthlyIncome - monthlyExpense;
+                moneyLeftThisMonthDisplay.textContent = `$${moneyLeft.toFixed(2)}`;
+                moneyLeftThisMonthDisplay.className = `font-bold ${moneyLeft >= 0 ? 'text-green-800' : 'text-red-800'}`; // Color based on positive/negative
+                addTransactionListEventListeners();
+            };
+
+            /**
+             * Adds event listeners for transaction delete buttons.
+             */
+            const addTransactionListEventListeners = () => {
+                document.querySelectorAll('.delete-transaction-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const idToDelete = parseInt(e.currentTarget.dataset.id);
+                        transactions = transactions.filter(t => t.id !== idToDelete);
+                        saveData('personalAssistantTransactions', transactions);
+                        renderTransactions();
+                        updateSpendingInsights();
+                        generateSpendingRecommendation();
+                    };
+                });
+            };
+
+            /**
+             * Renders the list of monthly budget goals and their progress.
+             */
+            const renderBudgetGoals = () => {
+                budgetGoalsList.innerHTML = '';
+                const currentMonthYear = getCurrentMonthYear();
+                const currentMonthGoals = budgetGoals[currentMonthYear];
+
+                if (!currentMonthGoals || Object.keys(currentMonthGoals).length === 0) {
+                    budgetGoalsList.innerHTML = `<li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                                                    <span>No budget goals set yet for this month.</span>
+                                                </li>`;
+                    return;
+                }
+
+                const currentMonthExpenses = {}; // Aggregated actual spending for current month by subcategory
+                transactions.filter(t => t.date.startsWith(currentMonthYear) && t.mainCategory === 'Expense')
+                            .forEach(t => {
+                                currentMonthExpenses[t.subCategory] = (currentMonthExpenses[t.subCategory] || 0) + t.amount;
+                            });
+
+                const allCategories = getAllBudgetCategories();
+
+                for (const subCatName in currentMonthGoals) {
+                    if (currentMonthGoals.hasOwnProperty(subCatName)) {
+                        const goalAmount = currentMonthGoals[subCatName];
+                        const actualSpent = currentMonthExpenses[subCatName] || 0;
+                        const remaining = goalAmount - actualSpent;
+                        const percentage = (actualSpent / goalAmount) * 100;
+
+                        // Find the emoji for the subcategory
+                        let subCatEmoji = '';
+                        for (const mainCatKey in allCategories) {
+                            const found = allCategories[mainCatKey].find(cat => cat.name === subCatName);
+                            if (found) {
+                                subCatEmoji = found.emoji;
+                                break;
+                            }
+                        }
+
+                        const listItem = document.createElement('li');
+                        listItem.className = `bg-white p-4 rounded-lg shadow-md border border-gray-200`;
+                        listItem.innerHTML = `
+                            <div class="flex flex-col flex-1">
+                                <span class="font-semibold text-gray-800 text-lg">${subCatEmoji} ${subCatName} Goal: $${goalAmount.toFixed(2)}</span>
+                                <span class="text-gray-700 text-md">Spent: $${actualSpent.toFixed(2)} | Remaining: <span class="${remaining >= 0 ? 'text-green-600' : 'text-red-600'}">$${remaining.toFixed(2)}</span></span>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                    <div class="h-2.5 rounded-full ${percentage > 100 ? 'bg-red-500' : 'bg-blue-500'}" style="width: ${Math.min(percentage, 100)}%;"></div>
+                                </div>
+                                <span class="text-sm text-gray-500 mt-1">${percentage.toFixed(1)}% of goal used</span>
+                            </div>
+                            <button data-subcategory="${subCatName}" data-monthyear="${currentMonthYear}" class="delete-budget-goal-btn text-red-500 hover:text-red-700 ml-4 p-2 rounded-full hover:bg-red-100 transition-colors duration-200">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        `;
+                        budgetGoalsList.appendChild(listItem);
+                    }
+                }
+                addBudgetGoalListEventListeners();
+            };
+
+            /**
+             * Adds event listeners for budget goal delete buttons.
+             */
+            const addBudgetGoalListEventListeners = () => {
+                document.querySelectorAll('.delete-budget-goal-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const subCategory = e.currentTarget.dataset.subcategory;
+                        const monthYear = e.currentTarget.dataset.monthyear;
+                        if (budgetGoals[monthYear] && budgetGoals[monthYear][subCategory]) {
+                            delete budgetGoals[monthYear][subCategory];
+                            if (Object.keys(budgetGoals[monthYear]).length === 0) {
+                                delete budgetGoals[monthYear]; // Remove month entry if no goals left
+                            }
+                            saveData('personalAssistantBudgetGoals', budgetGoals);
+                            renderBudgetGoals();
+                            generateSpendingRecommendation();
+                        }
+                    };
+                });
+            };
+
+            /**
+             * Updates spending insights text and draws the chart.
+             */
+            const updateSpendingInsights = () => {
+                const currentMonthYear = getCurrentMonthYear();
+                const monthlyExpenses = transactions.filter(t => t.date.startsWith(currentMonthYear) && t.mainCategory === 'Expense');
+
+                const spendingByCategory = {};
+                monthlyExpenses.forEach(t => {
+                    spendingByCategory[t.subCategory] = (spendingByCategory[t.subCategory] || 0) + t.amount;
+                });
+
+                let insightsHtml = '';
+                const categories = Object.keys(spendingByCategory).sort((a, b) => spendingByCategory[b] - spendingByCategory[a]);
+
+                if (categories.length > 0) {
+                    insightsHtml = `<p class="font-bold text-gray-800 mb-2">Breakdown:</p>`;
+                    categories.forEach(cat => {
+                        const amount = spendingByCategory[cat];
+                        // Find emoji for display
+                        let subCatEmoji = '';
+                        const allCats = getAllBudgetCategories();
+                        for (const mainCat in allCats) {
+                            const found = allCats[mainCat].find(c => c.name === cat);
+                            if (found) {
+                                subCatEmoji = found.emoji;
+                                break;
+                            }
+                        }
+                        insightsHtml += `<p>${subCatEmoji} ${cat}: $${amount.toFixed(2)}</p>`;
+                    });
+                } else {
+                    insightsHtml = '<p>No spending data for this month.</p>';
+                }
+                spendingInsightsText.innerHTML = insightsHtml;
+
+                drawSpendingChart(spendingByCategory);
+            };
+
+            /**
+             * Draws a pie chart for spending distribution.
+             * @param {Object} data - An object with subcategory names as keys and amounts as values.
+             */
+            const drawSpendingChart = (data) => {
+                // Clear previous drawing
+                spendingChartCtx.clearRect(0, 0, spendingChartCanvas.width, spendingChartCanvas.height);
+
+                const total = Object.values(data).reduce((sum, amount) => sum + amount, 0);
+
+                if (total === 0) {
+                    // Draw a placeholder if no data
+                    spendingChartCtx.fillStyle = '#ccc';
+                    spendingChartCtx.fillRect(0, 0, spendingChartCanvas.width, spendingChartCanvas.height);
+                    spendingChartCtx.fillStyle = '#666';
+                    spendingChartCtx.font = '16px Inter';
+                    spendingChartCtx.textAlign = 'center';
+                    spendingChartCtx.textBaseline = 'middle';
+                    spendingChartCtx.fillText('No Spending Data', spendingChartCanvas.width / 2, spendingChartCanvas.height / 2);
+                    return;
+                }
+
+                let startAngle = 0;
+                const centerX = spendingChartCanvas.width / 2;
+                const centerY = spendingChartCanvas.height / 2;
+                const radius = Math.min(centerX, centerY) * 0.7; // Make chart slightly smaller than canvas
+
+                // Define a set of colors for the chart slices
+                const colors = ['#4CAF50', '#2196F3', '#FFC107', '#FF9800', '#F44336', '#9C27B0', '#00BCD4', '#8BC34A', '#FFEB3B', '#607D8B'];
+                let colorIndex = 0;
+
+                for (const category in data) {
+                    if (data.hasOwnProperty(category)) {
+                        const sliceAngle = (data[category] / total) * 2 * Math.PI;
+                        const color = colors[colorIndex % colors.length];
+                        colorIndex++;
+
+                        spendingChartCtx.fillStyle = color;
+                        spendingChartCtx.beginPath();
+                        spendingChartCtx.moveTo(centerX, centerY);
+                        spendingChartCtx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                        spendingChartCtx.closePath();
+                        spendingChartCtx.fill();
+
+                        // Draw label (optional, can get crowded for many slices)
+                        const midAngle = startAngle + sliceAngle / 2;
+                        const labelX = centerX + radius * 0.6 * Math.cos(midAngle);
+                        const labelY = centerY + radius * 0.6 * Math.sin(midAngle);
+                        
+                        spendingChartCtx.fillStyle = '#333'; // Darker text for better contrast
+                        spendingChartCtx.font = '12px Inter';
+                        spendingChartCtx.textAlign = 'center';
+                        spendingChartCtx.textBaseline = 'middle';
+                        // Only draw label if it's a significant slice to avoid clutter
+                        if (data[category] / total > 0.05) { // Only label slices larger than 5%
+                             spendingChartCtx.fillText(`${category} (${((data[category] / total) * 100).toFixed(1)}%)`, labelX, labelY);
+                        }
+
+                        startAngle += sliceAngle;
+                    }
+                }
+            };
+
+            /**
+             * Generates spending recommendations based on budget goals and spending patterns.
+             */
+            const generateSpendingRecommendation = () => {
+                const currentMonthYear = getCurrentMonthYear();
+                const currentMonthGoals = budgetGoals[currentMonthYear] || {};
+                const monthlyExpenses = transactions.filter(t => t.date.startsWith(currentMonthYear) && t.mainCategory === 'Expense');
+
+                const spendingByCategory = {};
+                monthlyExpenses.forEach(t => {
+                    spendingByCategory[t.subCategory] = (spendingByCategory[t.subCategory] || 0) + t.amount;
+                });
+
+                let recommendations = [];
+                let hasOverBudget = false;
+                let totalIncome = 0;
+                let totalExpense = 0;
+
+                // Check goal adherence
+                for (const subCat in currentMonthGoals) {
+                    if (currentMonthGoals.hasOwnProperty(subCat)) {
+                        const goal = currentMonthGoals[subCat];
+                        const spent = spendingByCategory[subCat] || 0;
+                        if (spent > goal) {
+                            recommendations.push(`You are over budget on <span class="font-semibold">${subCat}</span> by $${(spent - goal).toFixed(2)}. Consider cutting back here.`);
+                            hasOverBudget = true;
+                        } else if (spent === 0 && goal > 0) {
+                             recommendations.push(`You haven't spent anything yet on <span class="font-semibold">${subCat}</span>. Keep up the good work or utilize your budget!`);
+                        }
+                    }
+                }
+
+                // Calculate overall money left/overspent
+                monthlyExpenses.forEach(t => totalExpense += t.amount);
+                transactions.filter(t => t.date.startsWith(currentMonthYear) && t.mainCategory === 'Income')
+                            .forEach(t => totalIncome += t.amount);
+                const moneyLeft = totalIncome - totalExpense;
+
+                if (moneyLeft < 0) {
+                    recommendations.push(`Overall, you have overspent by <span class="font-semibold text-red-600">$${Math.abs(moneyLeft).toFixed(2)}</span> this month. Review your expenses!`);
+                } else if (moneyLeft > 0 && recommendations.length === 0) {
+                    recommendations.push(`You have <span class="font-semibold text-green-600">$${moneyLeft.toFixed(2)}</span> remaining this month. Great job managing your budget!`);
+                }
+
+                // Generic recommendations if no specific issues
+                if (recommendations.length === 0) {
+                    recommendations.push("Keep tracking your transactions to gain better insights into your spending habits.");
+                    recommendations.push("Consider setting budget goals for your main expense categories next month.");
+                }
+
+                // Add automated bill reminders (smart feature suggestion)
+                const today = new Date();
+                const threeDaysFromNow = new Date(today);
+                threeDaysFromNow.setDate(today.getDate() + 3);
+
+                const billLikeCategories = ['Rent', 'Utilities', 'Debt Payments']; // Categories that might be recurring bills
+                billLikeCategories.forEach(category => {
+                    // Find recent transactions for this category that are not too old
+                    const recentBills = transactions.filter(t => t.subCategory === category && new Date(t.date) > new Date(today.getFullYear(), today.getMonth() - 2, 1)); // Last 2 months
+                    if (recentBills.length > 0) {
+                        // Sort by date to get the latest one
+                        recentBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        const lastBill = recentBills[0];
+                        const lastBillDate = new Date(lastBill.date + 'T00:00:00');
+
+                        // Estimate next bill date (simplistic: same day next month, could be more complex)
+                        const nextExpectedBillDate = new Date(lastBillDate);
+                        nextExpectedBillDate.setMonth(lastBillDate.getMonth() + 1);
+                        nextExpectedBillDate.setHours(0,0,0,0);
+
+                        // If the next expected bill is within the next 3 days and not yet recorded for this month
+                        const currentMonthExpenseForCategory = monthlyExpenses.find(t => t.subCategory === category);
+
+                        if (nextExpectedBillDate >= today && nextExpectedBillDate <= threeDaysFromNow && !currentMonthExpenseForCategory) {
+                            // Check if a task for this bill already exists for the next date to avoid duplicates
+                            const existingReminderTask = tasks.some(task =>
+                                task.description.includes(category) &&
+                                task.date === nextExpectedBillDate.toISOString().split('T')[0] &&
+                                task.categoryMain === 'Work/Productivity' && // Assuming bill reminders are productivity tasks
+                                !task.completed
+                            );
+
+                            if (!existingReminderTask) {
+                                recommendations.push(`Action: Your <span class="font-semibold">${category}</span> of approx. $${lastBill.amount.toFixed(2)} is likely due around ${formatDate(nextExpectedBillDate.toISOString().split('T')[0])}. Consider adding a task!`);
+                            }
+                        }
+                    }
+                });
+
+
+                spendingRecommendationOutput.innerHTML = recommendations.map(rec => `<p>${rec}</p>`).join('');
+                if (recommendations.length === 0) {
+                    spendingRecommendationOutput.innerHTML = '<p>No recommendations yet. Start tracking your spending!</p>';
+                }
+            };
+
+
+            /**
+             * Renders the list of notes in the UI.
+             */
+            const renderNotes = () => {
+                notesList.innerHTML = ''; // Clear existing list
+                const searchTerm = noteSearchInput.value.toLowerCase();
+
+                const filteredNotes = notes.filter(note => {
+                    const matchesTitle = note.title.toLowerCase().includes(searchTerm);
+                    const matchesContent = note.content.toLowerCase().includes(searchTerm);
+                    const matchesCategory = note.category ? note.category.toLowerCase().includes(searchTerm) : false;
+                    const matchesTags = note.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+                    return matchesTitle || matchesContent || matchesCategory || matchesTags;
+                }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort by most recent
+
+                if (filteredNotes.length === 0) {
+                    notesList.innerHTML = `<li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                                            <span>No notes found matching your criteria.</span>
+                                        </li>`;
+                    return;
+                }
+
+                filteredNotes.forEach(note => {
+                    const listItem = document.createElement('li');
+                    listItem.className = `bg-white p-4 rounded-lg shadow-md border border-gray-200`;
+                    listItem.style.backgroundColor = note.color || '#ffffff'; // Apply custom color
+
+                    const tagsHtml = note.tags.map(tag => `<span class="inline-block bg-gray-200 rounded-full px-2 py-0.5 text-xs font-semibold text-gray-700 mr-1 mb-1">${tag}</span>`).join('');
+                    const categoryHtml = note.category ? `<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full mr-2">${note.category}</span>` : '';
+
+                    listItem.innerHTML = `
+                        <div class="flex flex-col flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="text-xl font-semibold text-gray-800">${note.title}</h4>
+                                <div class="flex items-center space-x-2">
+                                    <button data-id="${note.id}" class="toggle-note-details-btn text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200">
+                                        <i class="fas ${note.expanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                                    </button>
+                                    <button data-id="${note.id}" class="convert-to-task-btn text-green-500 hover:text-green-700 p-2 rounded-full hover:bg-green-100 transition-colors duration-200" title="Convert to Task">
+                                        <i class="fas fa-clipboard-check"></i>
+                                    </button>
+                                    <button data-id="${note.id}" class="delete-note-btn text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-100 transition-colors duration-200">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-500 mb-2">${categoryHtml}${tagsHtml}</div>
+                            <div class="note-content-preview text-gray-700 mb-2 markdown-rendered">
+                                ${convertMarkdownToHtml(note.content)}
+                            </div>
+                            <p class="text-xs text-gray-500 text-right mt-auto">Created: ${note.timestamp}</p>
+                            <div id="note-details-${note.id}" class="note-details ${note.expanded ? '' : 'hidden'} mt-4 pt-4 border-t border-gray-200">
+                                <h5 class="text-md font-semibold text-gray-700 mb-2">Full Content:</h5>
+                                <div class="note-full-content text-gray-700 mb-4 markdown-rendered">
+                                    ${convertMarkdownToHtml(note.content)}
+                                </div>
+                                <h5 class="text-md font-semibold text-gray-700 mb-2">Related Notes:</h5>
+                                <ul id="related-notes-list-${note.id}" class="space-y-2 text-sm text-gray-600">
+                                    <li>No related notes found.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    notesList.appendChild(listItem);
+
+                    // If expanded, immediately show related notes
+                    if (note.expanded) {
+                        findRelatedNotes(note.id);
+                    }
+                });
+                addNoteListEventListeners();
+            };
+
+            /**
+             * Adds event listeners for note buttons.
+             */
+            const addNoteListEventListeners = () => {
+                document.querySelectorAll('.delete-note-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const idToDelete = parseInt(e.currentTarget.dataset.id);
+                        notes = notes.filter(note => note.id !== idToDelete);
+                        saveData('personalAssistantNotes', notes);
+                        renderNotes();
+                    };
+                });
+
+                document.querySelectorAll('.toggle-note-details-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const idToToggle = parseInt(e.currentTarget.dataset.id);
+                        const noteIndex = notes.findIndex(note => note.id === idToToggle);
+                        if (noteIndex !== -1) {
+                            notes[noteIndex].expanded = !notes[noteIndex].expanded;
+                            saveData('personalAssistantNotes', notes); // Save expanded state
+                            renderNotes(); // Re-render to show/hide details
+                        }
+                    };
+                });
+
+                document.querySelectorAll('.convert-to-task-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const idToConvert = parseInt(e.currentTarget.dataset.id);
+                        const noteToConvert = notes.find(note => note.id === idToConvert);
+                        if (noteToConvert) {
+                            // Find an appropriate main category for the task from the note's category or default
+                            let taskMainCategory = 'Personal/Home'; // Default
+                            if (noteToConvert.category === 'Meeting' || noteToConvert.category === 'Idea' || noteToConvert.category === 'Reference') {
+                                taskMainCategory = 'Work/Productivity';
+                            } else if (noteToConvert.category === 'Journal') {
+                                taskMainCategory = 'Personal/Home';
+                            }
+
+                            // Create a new task based on the note
+                            const newTask = {
+                                id: generateId(),
+                                description: noteToConvert.title, // Use note title as task description
+                                fullDescription: `📝 ${noteToConvert.title} (from Note)`,
+                                date: new Date().toISOString().split('T')[0], // Today's date by default
+                                completed: false,
+                                categoryMain: taskMainCategory,
+                                categoryMainEmoji: taskCategories[taskMainCategory]?.[0]?.emoji || '', // Get first emoji of category
+                                categorySub: 'Other', // Default sub-category
+                                categorySubEmoji: '➡️', // Default emoji for "Other"
+                                priority: 'Medium', // Default priority
+                                isRecurring: false,
+                                recurrence: null,
+                                dependsOnTaskId: null,
+                                isBlocked: false
+                            };
+                            tasks.push(newTask);
+                            saveData('personalAssistantTasks', tasks);
+
+                            // Optional: Remove note after converting to task, or just leave it
+                            // notes = notes.filter(note => note.id !== idToConvert);
+                            // saveData('personalAssistantNotes', notes);
+
+                            alert(`Note "${noteToConvert.title}" converted to a new task!`); // Using alert for simplicity, could be custom modal
+                            renderTasks(); // Re-render tasks to show new task
+                            renderNotes(); // Re-render notes (if note was removed)
+                        }
+                    };
+                });
+            };
+
+            /**
+             * Finds and displays related notes for a given note ID.
+             * @param {number} currentNoteId - The ID of the note to find related notes for.
+             */
+            const findRelatedNotes = (currentNoteId) => {
+                const currentNote = notes.find(n => n.id === currentNoteId);
+                const relatedNotesListElement = document.getElementById(`related-notes-list-${currentNoteId}`);
+                if (!currentNote || !relatedNotesListElement) return;
+
+                relatedNotesListElement.innerHTML = ''; // Clear previous related notes
+
+                const related = [];
+                const currentNoteKeywords = (currentNote.title + ' ' + currentNote.content).toLowerCase().split(/\s+/).filter(word => word.length > 3);
+                const currentNoteTags = currentNote.tags.map(tag => tag.toLowerCase());
+
+                notes.forEach(note => {
+                    if (note.id === currentNoteId || note.expanded) return; // Don't relate to itself or already expanded notes
+
+                    let score = 0;
+                    // Score by shared tags
+                    note.tags.forEach(tag => {
+                        if (currentNoteTags.includes(tag.toLowerCase())) {
+                            score += 2; // Higher score for exact tag match
+                        }
+                    });
+
+                    // Score by keyword overlap
+                    const noteKeywords = (note.title + ' ' + note.content).toLowerCase().split(/\s+/).filter(word => word.length > 3);
+                    currentNoteKeywords.forEach(keyword => {
+                        if (noteKeywords.includes(keyword)) {
+                            score += 1;
+                        }
+                    });
+
+                    if (score > 0) { // Only add if there's some commonality
+                        related.push({ note, score });
+                    }
+                });
+
+                related.sort((a, b) => b.score - a.score); // Sort by highest score
+
+                if (related.length > 0) {
+                    related.slice(0, 3).forEach(item => { // Show top 3 related notes
+                        const li = document.createElement('li');
+                        li.className = 'bg-gray-50 p-2 rounded-md border border-gray-200';
+                        li.innerHTML = `<span class="font-semibold">${item.note.title}</span> (Score: ${item.score}) - <span class="text-sm italic text-gray-500">${item.note.category || 'N/A'}</span>`;
+                        relatedNotesListElement.appendChild(li);
+                    });
+                } else {
+                    relatedNotesListElement.innerHTML = `<li>No related notes found.</li>`;
+                }
+            };
+
+
+            // --- Goal Module Logic ---
+
+            let currentVisionBoardImages = []; // Temp storage for images before saving with goal
+
+            /**
+             * Handles image upload for vision board.
+             */
+            goalVisionBoardUpload.addEventListener('change', (event) => {
+                const files = event.target.files;
+                currentVisionBoardImages = []; // Reset for new uploads
+                visionBoardPreview.innerHTML = ''; // Clear preview
+
+                if (files.length === 0) {
+                    visionBoardPreview.innerHTML = '<p class="text-gray-500 text-sm">Upload images for your vision board.</p>';
+                    return;
+                }
+
+                Array.from(files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            currentVisionBoardImages.push(e.target.result); // Store Base64
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.className = 'vision-board-image-item';
+                            visionBoardPreview.appendChild(img);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+
+            /**
+             * Populates the linked notes and tasks dropdowns.
+             */
+            const populateLinkedNotesAndTasks = () => {
+                // Populate notes for linking
+                goalLinkNotesSelect.innerHTML = '';
+                notes.forEach(note => {
+                    const option = document.createElement('option');
+                    option.value = note.id;
+                    option.textContent = note.title;
+                    goalLinkNotesSelect.appendChild(option);
+                });
+
+                // Populate tasks for linking
+                tasks.forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = task.id;
+                    option.textContent = task.fullDescription || task.description;
+                    goalLinkTasksSelect.appendChild(option);
+                });
+            };
+
+            /**
+             * Smart suggestion for goal breakdown based on category.
+             */
+            const suggestGoalBreakdown = () => { // Renamed for clarity
+                const selectedCategory = goalCategorySelect.value;
+                if (selectedCategory && goalCategories[selectedCategory]) {
+                    const suggestions = goalCategories[selectedCategory].suggestions.join('\n- ');
+                    if (suggestions) {
+                        goalAchievableInput.value = `- ${suggestions}`;
+                        goalAchievableInput.placeholder = "Recommended steps pre-filled based on category.";
+                    } else {
+                        goalAchievableInput.value = '';
+                        goalAchievableInput.placeholder = "Outline steps to achieve this goal...";
+                    }
+                } else {
+                    goalAchievableInput.value = '';
+                    goalAchievableInput.placeholder = "Outline steps to achieve this goal...";
+                }
+            };
+
+
+            /**
+             * Renders the list of goals in the UI.
+             */
+            const renderGoals = () => {
+                goalsList.innerHTML = ''; // Clear existing list
+
+                let filteredAndSortedGoals = [...goals];
+
+                // Filter by category
+                const filterCategory = goalFilterCategory.value;
+                if (filterCategory) {
+                    filteredAndSortedGoals = filteredAndSortedGoals.filter(goal => goal.category === filterCategory);
+                }
+
+                // Sort goals
+                const sortBy = goalSortBy.value;
+                filteredAndSortedGoals.sort((a, b) => {
+                    if (sortBy === 'deadline-asc') {
+                        return new Date(a.targetDate) - new Date(b.targetDate);
+                    } else if (sortBy === 'deadline-desc') {
+                        return new Date(b.targetDate) - new Date(a.targetDate);
+                    } else if (sortBy === 'created-asc') {
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    } else if (sortBy === 'created-desc') {
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    }
+                    return 0;
+                });
+
+
+                if (filteredAndSortedGoals.length === 0) {
+                    goalsList.innerHTML = `<li class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200">
+                                            <span>No goals added yet, or none match your filter.</span>
+                                        </li>`;
+                    return;
+                }
+
+                filteredAndSortedGoals.forEach(goal => {
+                    const listItem = document.createElement('li');
+                    const progress = goal.measurableTarget > 0 ? (goal.currentProgress / goal.measurableTarget) * 100 : 0;
+                    const progressPercentage = Math.min(progress, 100).toFixed(1);
+                    const isOverdue = !goal.completed && new Date(goal.targetDate) < new Date();
+                    const progressColorClass = progress >= 100 ? 'bg-green-500' : (isOverdue ? 'bg-red-500' : 'bg-blue-500');
+
+                    listItem.className = `bg-white p-4 rounded-xl shadow-lg border ${goal.completed ? 'border-green-300 bg-green-50' : 'border-gray-200'} ${isOverdue && !goal.completed ? 'border-red-400 bg-red-50' : ''}`;
+                    listItem.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="text-xl font-semibold text-gray-800">${goal.categoryEmoji} ${goal.specific}</h4>
+                            <button data-id="${goal.id}" class="delete-goal-btn text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-100 transition-colors duration-200">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2">Category: ${goal.category}</p>
+                        <p class="text-md text-gray-700 mb-1">
+                            Progress: ${goal.currentProgress} / ${goal.measurableTarget} ${goal.measurableMetric}
+                            <span class="font-bold ml-2">(${progressPercentage}%)</span>
+                        </p>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                            <div class="h-2.5 rounded-full ${progressColorClass}" style="width: ${progressPercentage}%;"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-1">Deadline: ${formatDate(goal.targetDate)} ${isOverdue && !goal.completed ? '<span class="text-red-600 font-semibold">(Overdue)</span>' : ''}</p>
+                        <p class="text-sm text-gray-600 italic">"Why it matters": ${goal.whyMatters}</p>
+
+                        <!-- Progress Update Input -->
+                        <div class="mt-3 flex items-center gap-2">
+                            <label for="goal-update-progress-${goal.id}" class="text-sm font-medium text-gray-700">Update Progress:</label>
+                            <input type="number" id="goal-update-progress-${goal.id}"
+                                value="${goal.currentProgress}"
+                                min="0" max="${goal.measurableTarget}"
+                                step="any"
+                                class="w-24 p-1 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <button data-id="${goal.id}" class="update-goal-progress-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200">Update</button>
+                        </div>
+
+
+                        ${goal.visionBoardImages && goal.visionBoardImages.length > 0 ?
+                            `<div class="mt-4 border-t pt-4 border-gray-200">
+                                <h5 class="text-md font-semibold text-gray-700 mb-2">Vision Board:</h5>
+                                <div class="grid grid-cols-3 gap-2">
+                                    ${goal.visionBoardImages.map(imgSrc => `<img src="${imgSrc}" class="vision-board-image-item w-full h-20 object-cover rounded-md" alt="Vision Board Image">`).join('')}
+                                </div>
+                            </div>` : ''
+                        }
+
+                        ${(goal.linkedNotes && goal.linkedNotes.length > 0) || (goal.linkedTasks && goal.linkedTasks.length > 0) ?
+                            `<div class="mt-4 border-t pt-4 border-gray-200">
+                                <h5 class="text-md font-semibold text-gray-700 mb-2">Linked Items:</h5>
+                                ${goal.linkedNotes && goal.linkedNotes.length > 0 ?
+                                    `<p class="text-sm font-medium text-gray-700 mt-2">Notes:</p>
+                                    <ul class="list-disc list-inside ml-4 text-sm text-gray-600">
+                                        ${goal.linkedNotes.map(noteId => {
+                                            const linkedNote = notes.find(n => n.id === noteId);
+                                            return linkedNote ? `<li><a href="#" data-id="${noteId}" class="linked-note-title text-blue-600 hover:underline">${linkedNote.title}</a></li>` : '';
+                                        }).join('')}
+                                    </ul>` : ''
+                                }
+                                ${goal.linkedTasks && goal.linkedTasks.length > 0 ?
+                                    `<p class="text-sm font-medium text-gray-700 mt-2">Tasks:</p>
+                                    <ul class="list-disc list-inside ml-4 text-sm text-gray-600">
+                                        ${goal.linkedTasks.map(taskId => {
+                                            const linkedTask = tasks.find(t => t.id === taskId);
+                                            return linkedTask ? `<li><a href="#" data-id="${taskId}" class="linked-task-title text-blue-600 hover:underline">${linkedTask.fullDescription || linkedTask.description}</a></li>` : '';
+                                        }).join('')}
+                                    </ul>` : ''
+                                }
+                            </div>` : ''
+                        }
+                    `;
+                    goalsList.appendChild(listItem);
+                });
+                addGoalListEventListeners();
+            };
+
+            /**
+             * Adds event listeners for goal interactions.
+             */
+            const addGoalListEventListeners = () => {
+                document.querySelectorAll('.delete-goal-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const idToDelete = parseInt(e.currentTarget.dataset.id);
+                        goals = goals.filter(goal => goal.id !== idToDelete);
+                        saveData('personalAssistantGoals', goals);
+                        renderGoals();
+                    };
+                });
+
+                document.querySelectorAll('.update-goal-progress-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        const idToUpdate = parseInt(e.currentTarget.dataset.id);
+                        const progressInput = document.getElementById(`goal-update-progress-${idToUpdate}`);
+                        const newProgressValue = parseFloat(progressInput.value);
+
+                        const goalIndex = goals.findIndex(goal => goal.id === idToUpdate);
+                        if (goalIndex !== -1 && !isNaN(newProgressValue) && newProgressValue >= 0) {
+                            goals[goalIndex].currentProgress = newProgressValue;
+                            if (goals[goalIndex].measurableTarget > 0 && newProgressValue >= goals[goalIndex].measurableTarget) {
+                                goals[goalIndex].completed = true; // Mark as completed if target reached
+                            } else {
+                                goals[goalIndex].completed = false; // Unmark if progress drops below target
+                            }
+                            saveData('personalAssistantGoals', goals);
+                            renderGoals(); // Re-render to update progress bar and status
+                        }
+                    };
+                });
+
+                // Handle clicks on linked notes (for demonstration, just log)
+                document.querySelectorAll('.linked-note-title').forEach(link => {
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        const noteId = parseInt(e.currentTarget.dataset.id);
+                        console.log(`Navigating to note with ID: ${noteId}`);
+                        // In a more complex app, this would navigate to the specific note's detail view
+                        alert(`You clicked on a linked note (ID: ${noteId}). In a full app, this would take you to the note details.`);
+                    };
+                });
+
+                // Handle clicks on linked tasks (for demonstration, just log)
+                document.querySelectorAll('.linked-task-title').forEach(link => {
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        const taskId = parseInt(e.currentTarget.dataset.id);
+                        console.log(`Navigating to task with ID: ${taskId}`);
+                        // In a more complex app, this would navigate to the specific task's detail view
+                        alert(`You clicked on a linked task (ID: ${taskId}). In a full app, this would take you to the task details.`);
+                    };
+                });
+            };
+
+
+            // --- Initial Load ---
+            // Event Listeners for Navigation (Added for module switching)
+            navDashboard.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(dashboardView);
+            });
+            navTasks.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(tasksView);
+                renderTasks(); // Re-render tasks when navigating to the task view
+                populateTaskDependencySelect(); // Re-populate dependencies
+                suggestTaskPriority(); // Suggest priority when viewing tasks
+            });
+            navBudget.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(budgetView);
+                renderTransactions(); // Re-render transactions when navigating to the budget view
+                populateBudgetSubCategorySelect('transaction');
+                populateBudgetSubCategorySelect('goal');
+                renderBudgetGoals();
+                updateSpendingInsights();
+                generateSpendingRecommendation();
+            });
+            navNotes.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(notesView);
+                renderNotes(); // Re-render notes when navigating to the notes view
+            });
+            navGoals.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(goalsView);
+                renderGoals(); // Re-render goals when navigating to the goals view
+                populateLinkedNotesAndTasks(); // Re-populate linked items
+            });
+
+            showView(dashboardView); // Show dashboard by default on initial load
+            updateDashboard(); // Populate dashboard with initial data
+            renderTasks(); // Render tasks on initial load
+            populateTaskDependencySelect(); // Initial population of dependency dropdown
+            renderTransactions(); // Render transactions on initial load
+            populateBudgetSubCategorySelect('transaction'); // Initial population for budget transaction module
+            populateBudgetSubCategorySelect('goal'); // Initial population for budget goal module
+            renderBudgetGoals(); // Render budget goals on initial load
+            updateSpendingInsights(); // Render initial spending insights and chart
+            generateSpendingRecommendation(); // Generate initial recommendations
+            transactionDateInput.valueAsDate = new Date(); // Set default date for transactions
+
+            // Ensure these are called after all functions are defined
+            populateLinkedNotesAndTasks(); // Initial population for Goals Module specific dropdowns
+            renderGoals(); // Make sure goals are rendered on initial load
+        });
+    </script>
+</body>
+</html>
