@@ -248,7 +248,7 @@
     <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg rounded-b-lg">
         <div class="container mx-auto flex items-center justify-between">
             <h1 class="text-3xl font-bold flex items-center">
-                <i class="fas fa-robot mr-3 text-blue-200"></i> Personal Assistant
+                <span class="mr-3 text-blue-200" style="font-size:1.5em;">🦢</span> The Smart Swan
             </h1>
             <nav>
                 <ul class="flex space-x-6">
@@ -690,7 +690,7 @@
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white p-4 text-center rounded-t-lg shadow-inner">
-        <p>&copy; 2025 Personal Assistant. All rights reserved.</p>
+        <p>&copy; 2025 The Smart Swan 🦢. All rights reserved.</p>
     </footer>
 
     <!-- Share Summary Modal -->
@@ -1105,4 +1105,284 @@
             };
 
             /**
-             * Gets the current month and year in
+             * Gets the current month and year in 'YYYY-MM' format.
+             * @returns {string} Current month and year.
+             */
+            const getCurrentMonthYear = () => {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            };
+
+            /**
+             * Updates the dashboard summary statistics.
+             */
+            const updateDashboard = () => {
+                // --- Task Summary ---
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(t => t.completed).length;
+                const overdueTasks = tasks.filter(t => new Date(t.date) < new Date() && !t.completed).length;
+                dashboardTasksSummary.textContent = `Total: ${totalTasks}, Completed: ${completedTasks}, Overdue: ${overdueTasks}`;
+
+                // --- Budget Summary ---
+                const currentMonth = getCurrentMonthYear();
+                const budgetData = budgetGoals[currentMonth] || {};
+                const totalIncome = (budgetData.Income || 0).toFixed(2);
+                const totalExpense = (budgetData.Expense || 0).toFixed(2);
+                const totalSavings = (budgetData.Savings || 0).toFixed(2);
+                const totalInvest = (budgetData.Invest || 0).toFixed(2);
+                dashboardBudgetSummary.innerHTML = `
+                    <div class="font-semibold text-lg text-green-800">Income: $${totalIncome}</div>
+                    <div class="font-semibold text-lg text-red-800">Expense: $${totalExpense}</div>
+                    <div class="font-semibold text-lg text-blue-800">Savings: $${totalSavings}</div>
+                    <div class="font-semibold text-lg text-purple-800">Invest: $${totalInvest}</div>
+                `;
+
+                // --- Notes Summary ---
+                const recentNotes = notes.slice(-3).reverse();
+                dashboardNotesSummary.innerHTML = recentNotes.length > 0 ?
+                    recentNotes.map(n => `<div class="text-gray-700">• ${n.title} (${n.category || 'General'})</div>`).join('') :
+                    'No recent notes.';
+
+                // --- Daily Recommendation (simple random suggestion for now) ---
+                const recommendations = [
+                    "Take a short walk to clear your mind!",
+                    "Read a few pages of a book.",
+                    "Drink a glass of water and stretch.",
+                    "Listen to a favorite song.",
+                    "Spend a few minutes meditating."
+                ];
+                dashboardRecommendation.textContent = recommendations[Math.floor(Math.random() * recommendations.length)];
+            };
+
+            // --- Task Operations ---
+
+            /**
+             * Adds a new task with the specified details.
+             */
+            const addTask = () => {
+                const mainCategory = taskMainCategorySelect.value;
+                const subCategory = taskSubCategorySelect.value;
+                const description = taskDescriptionInput.value.trim();
+                const date = taskDateInput.value;
+                const priority = taskPrioritySelect.value;
+                const isRecurring = taskRecurringCheckbox.checked;
+                const recurrenceFrequency = taskRecurrenceFrequency.value;
+                const excludeWeekends = taskExcludeWeekendsCheckbox.checked;
+                const dependency = taskDependencySelect.value;
+
+                // Basic validation
+                if (!mainCategory || !description || !date) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                // Create new task object
+                const newTask = {
+                    id: generateId(),
+                    mainCategory,
+                    subCategory,
+                    description,
+                    fullDescription: `${description} (${mainCategory}${subCategory ? ' - ' + subCategory : ''})`,
+                    date,
+                    priority,
+                    completed: false,
+                    recurring: isRecurring,
+                    recurrenceFrequency: isRecurring ? recurrenceFrequency : null,
+                    excludeWeekends: isRecurring && excludeWeekends,
+                    dependency: dependency || null
+                };
+
+                // Add to tasks array and save
+                tasks.push(newTask);
+                saveData('personalAssistantTasks', tasks);
+
+                // Clear form
+                taskMainCategorySelect.value = '';
+                taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+                taskDescriptionInput.value = '';
+                taskDateInput.value = '';
+                taskPrioritySelect.value = 'Low';
+                taskRecurringCheckbox.checked = false;
+                recurringOptions.classList.add('hidden');
+                taskDependencySelect.value = '';
+            };
+
+            /**
+             * Loads sub-categories based on the selected main category.
+             * @param {string} mainCategory - The selected main category.
+             */
+            const loadSubCategories = (mainCategory) => {
+                const subCategorySelect = document.getElementById('task-sub-category-select');
+                subCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>'; // Reset options
+
+                if (!mainCategory) {
+                    subCategorySelect.disabled = true;
+                    return;
+                }
+
+                // Enable the sub-category select
+                subCategorySelect.disabled = false;
+
+                // Get sub-categories for the selected main category
+                const subCategories = taskCategories[mainCategory] || [];
+
+                // Add sub-category options
+                subCategories.forEach(sc => {
+                    const option = document.createElement('option');
+                    option.value = sc.name;
+                    option.textContent = `${sc.emoji} ${sc.name}`;
+                    subCategorySelect.appendChild(option);
+                });
+            };
+
+            // --- Budget Operations ---
+
+            /**
+             * Adds a new transaction with the specified details.
+             */
+            const addTransaction = () => {
+                const mainCategory = transactionMainCategorySelect.value;
+                const subCategory = transactionSubCategorySelect.value;
+                const description = transactionDescriptionInput.value.trim();
+                const amount = parseFloat(transactionAmountInput.value);
+                const date = transactionDateInput.value;
+
+                // Basic validation
+                if (!mainCategory || isNaN(amount) || !date) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                // Create new transaction object
+                const newTransaction = {
+                    id: generateId(),
+                    mainCategory,
+                    subCategory,
+                    description,
+                    amount: amount.toFixed(2),
+                    date
+                };
+
+                // Add to transactions array and save
+                transactions.push(newTransaction);
+                saveData('personalAssistantTransactions', transactions);
+
+                // Clear form
+                transactionMainCategorySelect.value = '';
+                transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+                transactionDescriptionInput.value = '';
+                transactionAmountInput.value = '';
+                transactionDateInput.value = '';
+            };
+
+            /**
+             * Updates the monthly budget goal for a sub-category.
+             */
+            const setMonthlyBudgetGoal = () => {
+                const subCategory = budgetGoalSubcategorySelect.value;
+                const amount = parseFloat(budgetGoalAmountInput.value);
+
+                // Basic validation
+                if (!subCategory || isNaN(amount)) {
+                    alert('Please select a sub-category and enter a valid amount.');
+                    return;
+                }
+
+                const currentMonth = getCurrentMonthYear();
+
+                // Initialize budgetGoals object for the current month if it doesn't exist
+                if (!budgetGoals[currentMonth]) {
+                    budgetGoals[currentMonth] = {};
+                }
+
+                // Set the budget goal for the selected sub-category
+                budgetGoals[currentMonth][subCategory] = amount;
+
+                // Save updated budgetGoals to localStorage
+                saveData('personalAssistantBudgetGoals', budgetGoals);
+
+                // Clear form
+                budgetGoalSubcategorySelect.value = '';
+                budgetGoalAmountInput.value = '';
+            };
+
+            // --- Note Operations ---
+
+            /**
+             * Adds a new note with the specified details.
+             */
+            const addNote = () => {
+                const title = noteTitleInput.value.trim();
+                const content = noteContentInput.value.trim();
+                const category = noteCategoryInput.value;
+                const tags = noteTagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                const color = noteColorInput.value;
+
+                // Basic validation
+                if (!title || !content) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                // Create new note object
+                const newNote = {
+                    id: generateId(),
+                    title,
+                    content,
+                    category: category || null,
+                    tags: tags.length > 0 ? tags : null,
+                    color: color !== '#ffffff' ? color : null,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+
+                // Add to notes array and save
+                notes.push(newNote);
+                saveData('personalAssistantNotes', notes);
+
+                // Clear form
+                noteTitleInput.value = '';
+                noteContentInput.value = '';
+                noteCategoryInput.value = '';
+                noteTagsInput.value = '';
+                noteColorInput.value = '#ffffff';
+            };
+
+            /**
+             * Loads the selected note's details into the form for editing.
+             * @param {Object} note - The note object to load.
+             */
+            const loadNoteForEditing = (note) => {
+                noteTitleInput.value = note.title;
+                noteContentInput.value = note.content;
+                noteCategoryInput.value = note.category || '';
+                noteTagsInput.value = note.tags ? note.tags.join(', ') : '';
+                noteColorInput.value = note.color || '#ffffff';
+            };
+
+            // --- Goal Operations ---
+
+            /**
+             * Adds a new goal with the specified details.
+             */
+            const addGoal = () => {
+                const category = goalCategorySelect.value;
+                const specific = goalSpecificInput.value.trim();
+                const measurableMetric = goalMeasurableMetricInput.value.trim();
+                const measurableTarget = parseFloat(goalMeasurableTargetInput.value);
+                const currentProgress = parseFloat(goalCurrentProgressInput.value);
+                const achievable = goalAchievableInput.value.trim();
+                const whyMatters = goalWhyMattersInput.value.trim();
+                const targetDate = goalTargetDateInput.value;
+                const visionBoardFiles = Array.from(document.getElementById('goal-vision-board-upload').files);
+                const linkedNotes = Array.from(document.getElementById('goal-link-notes-select').selectedOptions).map(o => o.value);
+                const linkedTasks = Array.from(document.getElementById('goal-link-tasks-select').selectedOptions).map(o => o.value);
+
+                // Basic validation
+                if (!category || !specific || !measurableMetric || isNaN(measurableTarget) || isNaN(currentProgress) || !targetDate) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                // Create new goal object
+                const
