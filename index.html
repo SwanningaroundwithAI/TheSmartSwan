@@ -1111,9 +1111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskMainCategorySelect = document.getElementById('task-main-category-select');
     const taskSubCategorySelect = document.getElementById('task-sub-category-select');
 
-    // Populate sub-categories when main category changes (Task Module)
-    taskMainCategorySelect.addEventListener('change', (e) => {
-        const mainCategory = e.target.value;
+    // Helper for loading sub-categories (used in add/edit and on change)
+    function loadTaskSubCategories(mainCategory) {
         taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
         if (!mainCategory || !taskCategories[mainCategory]) {
             taskSubCategorySelect.disabled = true;
@@ -1126,74 +1125,11 @@ document.addEventListener('DOMContentLoaded', () => {
             option.textContent = `${sub.emoji} ${sub.name}`;
             taskSubCategorySelect.appendChild(option);
         });
-    });
-
-    // --- Budget Sub-Category Dynamic Loading ---
-    const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
-    const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
-    // Helper to get all categories including custom ones
-    function getAllBudgetCategories() {
-        const predefinedCategories = {
-            "Income": [
-                { "name": "Salary", "emoji": "💼" },
-                { "name": "Business", "emoji": "🏢" },
-                { "name": "Investments", "emoji": "📈" }
-            ],
-            "Expense": [
-                { "name": "Rent", "emoji": "🏠" },
-                { "name": "Utilities", "emoji": "💡" },
-                { "name": "Groceries", "emoji": "🥦" },
-                { "name": "Transportation", "emoji": "🚗" },
-                { "name": "Entertainment", "emoji": "🎉" },
-                { "name": "Healthcare", "emoji": "⚕️" },
-                { "name": "Insurance", "emoji": "🛡️" },
-                { "name": "Education", "emoji": "🎓" },
-                { "name": "Clothing", "emoji": "👗" },
-                { "name": "Personal Care", "emoji": "🧴" },
-                { "name": "Miscellaneous", "emoji": "📦" }
-            ],
-            "Savings": [
-                { "name": "Emergency Fund", "emoji": "🚑" },
-                { "name": "Retirement", "emoji": "🏖️" },
-                { "name": "Vacation", "emoji": "✈️" },
-                { "name": "Major Purchase", "emoji": "🏠" }
-            ],
-            "Invest": [
-                { "name": "Stocks", "emoji": "📈" },
-                { "name": "Bonds", "emoji": "📉" },
-                { "name": "Real Estate", "emoji": "🏢" },
-                { "name": "Cryptocurrency", "emoji": "₿" }
-            ]
-        };
-        const customCategories = appData.customBudgetCategories;
-        const allCategories = { ...predefinedCategories };
-        Object.keys(customCategories).forEach(mainCat => {
-            if (!allCategories[mainCat]) allCategories[mainCat] = [];
-            customCategories[mainCat].forEach(subCat => {
-                allCategories[mainCat].push({ name: subCat, emoji: '' });
-            });
-        });
-        return allCategories;
     }
 
-    // Populate sub-categories when main category changes (Budget Module)
-    transactionMainCategorySelect.addEventListener('change', (e) => {
-        const mainCategory = e.target.value;
-        transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
-        if (!mainCategory) {
-            transactionSubCategorySelect.disabled = true;
-            return;
-        }
-        transactionSubCategorySelect.disabled = false;
-        const allBudgetCategories = getAllBudgetCategories();
-        if (allBudgetCategories[mainCategory]) {
-            allBudgetCategories[mainCategory].forEach(sub => {
-                const option = document.createElement('option');
-                option.value = sub.name;
-                option.textContent = `${sub.emoji} ${sub.name}`;
-                transactionSubCategorySelect.appendChild(option);
-            });
-        }
+    // Attach event for main category change
+    taskMainCategorySelect.addEventListener('change', (e) => {
+        loadTaskSubCategories(e.target.value);
     });
 
     // --- Add Task Functionality ---
@@ -1236,8 +1172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset form
         taskMainCategorySelect.value = '';
-        taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
-        taskSubCategorySelect.disabled = true;
+        loadTaskSubCategories('');
         document.getElementById('task-description-input').value = '';
         document.getElementById('task-date-input').value = '';
         document.getElementById('task-priority-select').value = 'Low';
@@ -1332,7 +1267,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const achievable = document.getElementById('goal-achievable-input').value.trim();
         const whyMatters = document.getElementById('goal-why-matters-input').value.trim();
         const targetDate = document.getElementById('goal-target-date-input').value;
-        // Vision board and linked notes/tasks omitted for brevity
 
         if (!category || !specific || !measurableMetric || isNaN(measurableTarget) || isNaN(currentProgress) || !targetDate) {
             alert('Please fill in all required fields.');
