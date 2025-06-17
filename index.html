@@ -1135,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
 
     function getAllBudgetCategories() {
-         const predefinedCategories = {
+        const predefinedCategories = {
             "Income": [
                 { "name": "Salary", "emoji": "💼" },
                 { "name": "Business", "emoji": "🏢" },
@@ -1167,17 +1167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { "name": "Cryptocurrency", "emoji": "₿" }
             ]
         };
-        const customCategories = appData.customBudgetCategories || {};
-        const allCategories = JSON.parse(JSON.stringify(predefinedCategories));
-        Object.keys(customCategories).forEach(mainCat => {
-            if (!allCategories[mainCat]) allCategories[mainCat] = [];
-            customCategories[mainCat].forEach(subCat => {
-                if (!allCategories[mainCat].some(sc => sc.name === subCat)) {
-                    allCategories[mainCat].push({ name: subCat, emoji: '' });
-                }
-            });
-        });
-        return allCategories;
+        return predefinedCategories;
     }
 
     function loadBudgetSubCategories(mainCategory) {
@@ -1211,10 +1201,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const description = document.getElementById('task-description-input').value.trim();
         const date = document.getElementById('task-date-input').value;
         const priority = document.getElementById('task-priority-select').value;
-        const recurring = document.getElementById('task-recurring-checkbox').checked;
-        const recurrenceFrequency = document.getElementById('task-recurrence-frequency').value;
-        const excludeWeekends = document.getElementById('task-exclude-weekends-checkbox').checked;
-        const dependency = document.getElementById('task-dependency-select').value;
 
         if (!mainCategory || !description || !date) {
             alert('Please fill in all required fields.');
@@ -1228,12 +1214,7 @@ document.addEventListener('DOMContentLoaded', () => {
             description,
             fullDescription: `${description} (${mainCategory}${subCategory ? ' - ' + subCategory : ''})`,
             date,
-            priority,
-            completed: false,
-            recurring,
-            recurrenceFrequency: recurring ? recurrenceFrequency : null,
-            excludeWeekends: recurring && excludeWeekends,
-            dependency: dependency || null
+            priority
         };
 
         appData.tasks.push(newTask);
@@ -1247,9 +1228,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('task-description-input').value = '';
         document.getElementById('task-date-input').value = '';
         document.getElementById('task-priority-select').value = 'Low';
-        document.getElementById('task-recurring-checkbox').checked = false;
-        document.getElementById('recurring-options').classList.add('hidden');
-        document.getElementById('task-dependency-select').value = '';
     });
 
     // --- Add Transaction Functionality ---
@@ -1296,8 +1274,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = document.getElementById('note-title-input').value.trim();
         const content = document.getElementById('note-content-input').value.trim();
         const category = document.getElementById('note-category-input').value;
-        const tags = document.getElementById('note-tags-input').value.split(',').map(tag => tag.trim()).filter(tag => tag);
-        const color = document.getElementById('note-color-input').value;
 
         if (!title || !content) {
             alert('Please fill in all required fields.');
@@ -1308,11 +1284,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: Date.now(), // Simplified ID generation
             title,
             content,
-            category: category || null,
-            tags: tags.length > 0 ? tags : null,
-            color: color !== '#ffffff' ? color : null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            category
         };
 
         appData.notes.push(newNote);
@@ -1324,8 +1296,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('note-title-input').value = '';
         document.getElementById('note-content-input').value = '';
         document.getElementById('note-category-input').value = '';
-        document.getElementById('note-tags-input').value = '';
-        document.getElementById('note-color-input').value = '#ffffff';
     });
 
     // --- Add Goal Functionality ---
@@ -1337,8 +1307,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const measurableMetric = document.getElementById('goal-measurable-metric-input').value.trim();
         const measurableTarget = parseFloat(document.getElementById('goal-measurable-target-input').value);
         const currentProgress = parseFloat(document.getElementById('goal-current-progress-input').value);
-        const achievable = document.getElementById('goal-achievable-input').value.trim();
-        const whyMatters = document.getElementById('goal-why-matters-input').value.trim();
         const targetDate = document.getElementById('goal-target-date-input').value;
 
         if (!category || !specific || !measurableMetric || isNaN(measurableTarget) || isNaN(currentProgress) || !targetDate) {
@@ -1353,11 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             measurableMetric,
             measurableTarget,
             currentProgress,
-            achievable,
-            whyMatters,
-            targetDate,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            targetDate
         };
 
         appData.goals.push(newGoal);
@@ -1371,8 +1335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('goal-measurable-metric-input').value = '';
         document.getElementById('goal-measurable-target-input').value = '';
         document.getElementById('goal-current-progress-input').value = '0';
-        document.getElementById('goal-achievable-input').value = '';
-        document.getElementById('goal-why-matters-input').value = '';
         document.getElementById('goal-target-date-input').value = '';
     });
 
