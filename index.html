@@ -1134,7 +1134,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
     const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
     function getAllBudgetCategories() {
-        // Use the same structure as in the UI for budget categories
         const predefinedCategories = {
             "Income": [
                 { "name": "Salary", "emoji": "💼" },
@@ -1167,13 +1166,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 { "name": "Cryptocurrency", "emoji": "₿" }
             ]
         };
-        // Add custom categories if any
         const customCategories = appData.customBudgetCategories || {};
         const allCategories = JSON.parse(JSON.stringify(predefinedCategories));
         Object.keys(customCategories).forEach(mainCat => {
             if (!allCategories[mainCat]) allCategories[mainCat] = [];
             customCategories[mainCat].forEach(subCat => {
-                // Avoid duplicates
                 if (!allCategories[mainCat].some(sc => sc.name === subCat)) {
                     allCategories[mainCat].push({ name: subCat, emoji: '' });
                 }
@@ -1181,8 +1178,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return allCategories;
     }
-    transactionMainCategorySelect.addEventListener('change', (e) => {
-        const mainCategory = e.target.value;
+
+    function loadBudgetSubCategories(mainCategory) {
         transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
         if (!mainCategory) {
             transactionSubCategorySelect.disabled = true;
@@ -1198,6 +1195,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 transactionSubCategorySelect.appendChild(option);
             });
         }
+    }
+
+    transactionMainCategorySelect.addEventListener('change', (e) => {
+        loadBudgetSubCategories(e.target.value);
     });
 
     // --- Add Task Functionality ---
@@ -1281,8 +1282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset form
         transactionMainCategorySelect.value = '';
-        transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
-        transactionSubCategorySelect.disabled = true;
+        loadBudgetSubCategories('');
         document.getElementById('transaction-description-input').value = '';
         document.getElementById('transaction-amount-input').value = '';
         document.getElementById('transaction-date-input').value = '';
