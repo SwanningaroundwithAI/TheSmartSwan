@@ -1134,15 +1134,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
     const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
     function getAllBudgetCategories() {
-        const allBudgetCategories = {};
-        Object.keys(appData.budgetGoals).forEach(month => {
-            Object.keys(appData.budgetGoals[month]).forEach(subcat => {
-                if (!allBudgetCategories[subcat]) {
-                    allBudgetCategories[subcat] = { name: subcat, emoji: '' };
+        // Use the same structure as in the UI for budget categories
+        const predefinedCategories = {
+            "Income": [
+                { "name": "Salary", "emoji": "💼" },
+                { "name": "Business", "emoji": "🏢" },
+                { "name": "Investments", "emoji": "📈" }
+            ],
+            "Expense": [
+                { "name": "Rent", "emoji": "🏠" },
+                { "name": "Utilities", "emoji": "💡" },
+                { "name": "Groceries", "emoji": "🥦" },
+                { "name": "Transportation", "emoji": "🚗" },
+                { "name": "Entertainment", "emoji": "🎉" },
+                { "name": "Healthcare", "emoji": "⚕️" },
+                { "name": "Insurance", "emoji": "🛡️" },
+                { "name": "Education", "emoji": "🎓" },
+                { "name": "Clothing", "emoji": "👗" },
+                { "name": "Personal Care", "emoji": "🧴" },
+                { "name": "Miscellaneous", "emoji": "📦" }
+            ],
+            "Savings": [
+                { "name": "Emergency Fund", "emoji": "🚑" },
+                { "name": "Retirement", "emoji": "🏖️" },
+                { "name": "Vacation", "emoji": "✈️" },
+                { "name": "Major Purchase", "emoji": "🏠" }
+            ],
+            "Invest": [
+                { "name": "Stocks", "emoji": "📈" },
+                { "name": "Bonds", "emoji": "📉" },
+                { "name": "Real Estate", "emoji": "🏢" },
+                { "name": "Cryptocurrency", "emoji": "₿" }
+            ]
+        };
+        // Add custom categories if any
+        const customCategories = appData.customBudgetCategories || {};
+        const allCategories = JSON.parse(JSON.stringify(predefinedCategories));
+        Object.keys(customCategories).forEach(mainCat => {
+            if (!allCategories[mainCat]) allCategories[mainCat] = [];
+            customCategories[mainCat].forEach(subCat => {
+                // Avoid duplicates
+                if (!allCategories[mainCat].some(sc => sc.name === subCat)) {
+                    allCategories[mainCat].push({ name: subCat, emoji: '' });
                 }
             });
         });
-        return allBudgetCategories;
+        return allCategories;
     }
     transactionMainCategorySelect.addEventListener('change', (e) => {
         const mainCategory = e.target.value;
