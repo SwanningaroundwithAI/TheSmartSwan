@@ -1109,21 +1109,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Task Sub-Category Dynamic Loading - REMOVE SUB CATEGORY ---
     const taskMainCategorySelect = document.getElementById('task-main-category-select');
-    //const taskSubCategorySelect = document.getElementById('task-sub-category-select');
 
     function loadTaskSubCategories(mainCategory) {
-        //taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
         if (!mainCategory || !taskCategories[mainCategory]) {
-            //taskSubCategorySelect.disabled = true;
             return;
         }
-        //taskSubCategorySelect.disabled = false;
-        // taskCategories[mainCategory].forEach(sub => {
-        //     const option = document.createElement('option');
-        //     option.value = sub.name;
-        //     option.textContent = `${sub.emoji} ${sub.name}`;
-        //     taskSubCategorySelect.appendChild(option);
-        // });
     }
 
     taskMainCategorySelect.addEventListener('change', (e) => {
@@ -1132,7 +1122,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Budget Sub-Category Dynamic Loading ---
     const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
-    const transactionSubCategorySelect = document.getElementById('transaction-main-category-select');
 
     function getAllBudgetCategories() {
         const predefinedCategories = {
@@ -1171,21 +1160,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadBudgetSubCategories(mainCategory) {
-        //transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
         if (!mainCategory) {
-            //transactionSubCategorySelect.disabled = true;
             return;
         }
-        //transactionSubCategorySelect.disabled = false;
-        const allBudgetCategories = getAllBudgetCategories();
-        // if (allBudgetCategories[mainCategory]) {
-        //     allBudgetCategories[mainCategory].forEach(sub => {
-        //         const option = document.createElement('option');
-        //         option.value = sub.name;
-        //         option.textContent = `${sub.emoji} ${sub.name}`;
-        //         transactionSubCategorySelect.appendChild(option);
-        //     });
-        // }
     }
 
     transactionMainCategorySelect.addEventListener('change', (e) => {
@@ -1197,7 +1174,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addTaskBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const mainCategory = taskMainCategorySelect.value;
-        //const subCategory = taskSubCategorySelect.value;
         const description = document.getElementById('task-description-input').value.trim();
         const date = document.getElementById('task-date-input').value;
         const priority = document.getElementById('task-priority-select').value;
@@ -1210,7 +1186,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTask = {
             id: Date.now(), // Simplified ID generation
             mainCategory,
-            //subCategory,
             description,
             date,
             priority
@@ -1234,7 +1209,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addTransactionBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const mainCategory = transactionMainCategorySelect.value;
-        //const subCategory = transactionSubCategorySelect.value;
         const description = document.getElementById('transaction-description-input').value.trim();
         const amount = parseFloat(document.getElementById('transaction-amount-input').value);
         const date = document.getElementById('transaction-date-input').value;
@@ -1247,7 +1221,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTransaction = {
             id: Date.now(), // Simplified ID generation
             mainCategory,
-            //subCategory,
             description,
             amount: amount.toFixed(2),
             date
