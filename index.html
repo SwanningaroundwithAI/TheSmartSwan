@@ -1107,23 +1107,23 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    // --- Task Sub-Category Dynamic Loading ---
+    // --- Task Sub-Category Dynamic Loading - REMOVE SUB CATEGORY ---
     const taskMainCategorySelect = document.getElementById('task-main-category-select');
-    const taskSubCategorySelect = document.getElementById('task-sub-category-select');
+    //const taskSubCategorySelect = document.getElementById('task-sub-category-select');
 
     function loadTaskSubCategories(mainCategory) {
-        taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        //taskSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
         if (!mainCategory || !taskCategories[mainCategory]) {
-            taskSubCategorySelect.disabled = true;
+            //taskSubCategorySelect.disabled = true;
             return;
         }
-        taskSubCategorySelect.disabled = false;
-        taskCategories[mainCategory].forEach(sub => {
-            const option = document.createElement('option');
-            option.value = sub.name;
-            option.textContent = `${sub.emoji} ${sub.name}`;
-            taskSubCategorySelect.appendChild(option);
-        });
+        //taskSubCategorySelect.disabled = false;
+        // taskCategories[mainCategory].forEach(sub => {
+        //     const option = document.createElement('option');
+        //     option.value = sub.name;
+        //     option.textContent = `${sub.emoji} ${sub.name}`;
+        //     taskSubCategorySelect.appendChild(option);
+        // });
     }
 
     taskMainCategorySelect.addEventListener('change', (e) => {
@@ -1132,7 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Budget Sub-Category Dynamic Loading ---
     const transactionMainCategorySelect = document.getElementById('transaction-main-category-select');
-    const transactionSubCategorySelect = document.getElementById('transaction-sub-category-select');
+    const transactionSubCategorySelect = document.getElementById('transaction-main-category-select');
 
     function getAllBudgetCategories() {
         const predefinedCategories = {
@@ -1171,21 +1171,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadBudgetSubCategories(mainCategory) {
-        transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        //transactionSubCategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
         if (!mainCategory) {
-            transactionSubCategorySelect.disabled = true;
+            //transactionSubCategorySelect.disabled = true;
             return;
         }
-        transactionSubCategorySelect.disabled = true;
+        //transactionSubCategorySelect.disabled = false;
         const allBudgetCategories = getAllBudgetCategories();
-        if (allBudgetCategories[mainCategory]) {
-            allBudgetCategories[mainCategory].forEach(sub => {
-                const option = document.createElement('option');
-                option.value = sub.name;
-                option.textContent = `${sub.emoji} ${sub.name}`;
-                transactionSubCategorySelect.appendChild(option);
-            });
-        }
+        // if (allBudgetCategories[mainCategory]) {
+        //     allBudgetCategories[mainCategory].forEach(sub => {
+        //         const option = document.createElement('option');
+        //         option.value = sub.name;
+        //         option.textContent = `${sub.emoji} ${sub.name}`;
+        //         transactionSubCategorySelect.appendChild(option);
+        //     });
+        // }
     }
 
     transactionMainCategorySelect.addEventListener('change', (e) => {
@@ -1197,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addTaskBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const mainCategory = taskMainCategorySelect.value;
-        const subCategory = taskSubCategorySelect.value;
+        //const subCategory = taskSubCategorySelect.value;
         const description = document.getElementById('task-description-input').value.trim();
         const date = document.getElementById('task-date-input').value;
         const priority = document.getElementById('task-priority-select').value;
@@ -1210,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTask = {
             id: Date.now(), // Simplified ID generation
             mainCategory,
-            subCategory,
+            //subCategory,
             description,
             date,
             priority
@@ -1234,7 +1234,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addTransactionBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const mainCategory = transactionMainCategorySelect.value;
-        const subCategory = transactionSubCategorySelect.value;
+        //const subCategory = transactionSubCategorySelect.value;
         const description = document.getElementById('transaction-description-input').value.trim();
         const amount = parseFloat(document.getElementById('transaction-amount-input').value);
         const date = document.getElementById('transaction-date-input').value;
@@ -1247,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTransaction = {
             id: Date.now(), // Simplified ID generation
             mainCategory,
-            subCategory,
+            //subCategory,
             description,
             amount: amount.toFixed(2),
             date
@@ -1351,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const listItem = document.createElement('li');
             listItem.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200';
             listItem.innerHTML = `
-                <span>${task.description} (${task.mainCategory} - ${task.subCategory}) - ${task.date} - ${task.priority}</span>
+                <span>${task.description} (${task.mainCategory}) - ${task.date} - ${task.priority}</span>
                 <div>
                     <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
                     <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
@@ -1374,7 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const listItem = document.createElement('li');
             listItem.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-200';
             listItem.innerHTML = `
-                <span>${transaction.description} (${transaction.mainCategory} - ${transaction.subCategory}): $${transaction.amount} - ${transaction.date}</span>
+                <span>${transaction.description} (${transaction.mainCategory}): $${transaction.amount} - ${transaction.date}</span>
                 <div>
                     <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
                     <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
